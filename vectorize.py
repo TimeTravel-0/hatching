@@ -4,6 +4,14 @@
 # its purpose is to verify my (propably) stupid idea
 # of an "image to hatching pen plotter drawing".
 #
+# for now the script finds edges and fills areas in between
+# with random colors
+# edge detection works as expected, but drawn edges
+# (black lines...) are not handled in a special way
+# = handled like a normal area/fill = results in double
+# lines detected
+#
+#
 # we start with a few simple image manipulation functions:
 #
 
@@ -101,6 +109,7 @@ def blur(img_in, r=3):
    return img_out
 
 def blend(img1,img2):
+   '''take max val for each pixel from each image'''
    width,height = img1.get_size()
    img_out = pygame.Surface(img1.get_size())
    for y in range(0,height):
@@ -116,7 +125,7 @@ def blend(img1,img2):
 
 
 def bolden(img_in, r=3):
-   '''detects edges and marks them'''
+   '''draw along maximum brightness with circle radius r'''
    width,height = img_in.get_size()
    img_out = pygame.Surface(img_in.get_size())
    for y in range(0,height):
@@ -237,12 +246,25 @@ def main():
 
       # 3. with each flood fill a seperate area/mask is defined
 
-      # 4. for each mask, apply to original image and do a simple auto-correlation:
-      # 4.1: first by xy offset (varied) but 0deg rotation: peak = hatching direction
-      # 4.2: 2nd by xy offset (from 4.1) but rotation varied: peak = defines slight bend
+      # todo.
 
+      # 4. get average brightness from this area, check for gradient
 
+      # todo.
 
+      # 5. for each mask, apply to original image and do a simple auto-correlation:
+      # 5.1: first by xy offset (varied) but 0deg rotation: peak = hatching direction
+      # 5.2: 2nd by xy offset (from 4.1) but rotation varied: peak = defines slight bend
+
+      # todo.
+
+      # 6. generate strokes/hatching for each area. it is not necessary to know the area outline as polygon, just check the individual pixels
+
+      # todo.
+
+      # 7. generate strokes for borders.
+
+      # todo.
 
 
 
