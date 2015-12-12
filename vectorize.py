@@ -30,7 +30,7 @@ def blacknwhite(img_in,limit=32):
          # slow like hell. generate one blured image and diff them would be better
          #avgb = get_average_brightness(img_in,(x,y),32) # radius 3
 
-         limit = avgb/2	
+         #limit = avgb/2	
 
          color_out = (255,255,255)
          if color_in[0]+color_in[1]+color_in[2] < limit*3:
