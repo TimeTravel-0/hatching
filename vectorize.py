@@ -28,6 +28,7 @@
 
 import sys
 def cw(text, curr, max):
+   '''console status output function'''
    print "%s [%3i] %i of %i   \r"%(text,100*curr/max,curr,max),
 
    if curr >= max-1:
@@ -36,7 +37,7 @@ def cw(text, curr, max):
    sys.stdout.flush()
 
 def show_image(display, img, reloc):
-
+      '''shifts images in display and adds the new one ; fifo-like'''
       w,h = 3,3
 
       d = display.get_size()
@@ -328,7 +329,7 @@ def blend(img1,img2):
    return img_out
 
 def addmul(img1,img2,m=1,n=1):
-   '''take max val for each pixel from each image'''
+   '''img1 *n + img2*m'''
    width,height = img1.get_size()
    img_out = pygame.Surface(img1.get_size())
    for y in range(0,height):
@@ -384,8 +385,7 @@ def find_pixel_with_color(img_in, color):
    return False
 
 def find_brightest_pixel(img_in):
-   '''returns the 1st coordinate of a pixel of specified color'''
-
+   '''returns the coordinate of brightest pixel found'''
 
    maxbr = 0
    maxpos = False
@@ -402,7 +402,7 @@ def find_brightest_pixel(img_in):
 
 
 def find_brightest_pixel_with_spiral(img_in,startpos,maxlen,startang):
-   '''returns the 1st coordinate of a pixel of specified color'''
+   '''returns the coordinate of brightest pixel in spiral described by startpos, maxlen, startang'''
    width,height = img_in.get_size()
 
    maxbr = 0
@@ -452,13 +452,23 @@ def floodfill(img_in,startpos,color):
    return pixelcounter
 
 def id_to_color(id):
+   '''calculated unique color from id'''
    return (id%254+1,(id/254)%255,(id/254/255)%255)
 
+def angle_to_color(angle,length=1):
+   '''calculates color based on anlge'''
+   r = int(lcol( (math.sin(angle*2*math.pi/360)+1)*0.5*255*length ))
+   g = int(lcol( (math.sin((angle+120)*2*math.pi/360)+1)*0.5*255*length ))
+   b = int(lcol( (math.sin((angle+240)*2*math.pi/360)+1)*0.5*255*length ))
+   return [r,g,b]
+
 def color_to_id(color):
+   '''calculated unique id from color'''
    return color[0]-1 + color[1]*255 + color[2]*255*255
 
 
 def mask(img_in, color_mask):
+   '''create mask (if color at pixel = function parameter white, else black)'''
    width,height = img_in.get_size()
    img_out = pygame.Surface(img_in.get_size())
    for y in range(0,height):
@@ -473,6 +483,7 @@ def mask(img_in, color_mask):
    return img_out
 
 def get_avg_color(img_in, mask):
+   '''get average color for mask area'''
    width,height = img_in.get_size()
    color_avg_sum = [0,0,0]
    color_avg_cnt = 0
@@ -490,14 +501,14 @@ def get_avg_color(img_in, mask):
    return [color_avg_sum[0]/color_avg_cnt, color_avg_sum[1]/color_avg_cnt, color_avg_sum[2]/color_avg_cnt]
 
 
-
-
 def gen_single_color(size, color):
+   '''generates image with single color'''
    img_out = pygame.Surface(size)
    img_out.fill(color)
    return img_out
 
 def multiply(img_in1, img_in2):
+   '''img1 * img2'''
    width,height = img_in1.get_size()
    img_out = pygame.Surface(img_in1.get_size())
    for y in range(0,height):
@@ -542,7 +553,7 @@ def motionprobe(img_in,mask,pos,radius,angle,shift):
    return correlation_sum/correlation_count
 
 def motionfind(img_in,mask,pos,radius):
-
+   '''for one pos, run motionprobe for different angles/shifts'''
 
    cor_list = []
 
@@ -594,8 +605,6 @@ def motionsfind(img_in, mask, radius):
 def edgewalk(img):
    '''in image showing edges, walks along the edge and creates a polygon path'''
 
-
-
    img_clone = pygame.Surface(img.get_size())
    img_clone.blit(img,(0,0))
 
@@ -621,12 +630,12 @@ def edgewalk(img):
          position, br = find_brightest_pixel_with_spiral(img_clone,position,radius+3,angle2)
          if not position or br < brightness_min:
             break
-         lastdistance = math.pow(math.pow(position[0]-path[-1][0],2) + math.pow(position[1]-path[-1][1],2),0.5)
-         lastangle = 360
-         if len(path)>1:
-            angle1 = math.atan2(position[1]-path[-1][1],position[0]-path[-1][0])
+         #lastdistance = math.pow(math.pow(position[0]-path[-1][0],2) + math.pow(position[1]-path[-1][1],2),0.5)
+         #lastangle = 360
+         #if len(path)>1:
+         #   angle1 = math.atan2(position[1]-path[-1][1],position[0]-path[-1][0])
             angle2 = math.atan2(path[-1][1]-path[-2][1],path[-1][0]-path[-2][0])
-            lastangle = abs(angle1-angle2)*float(360)/(2*math.pi)
+         #   lastangle = abs(angle1-angle2)*float(360)/(2*math.pi)
             
          
          #if float(lastdistance)*lastangle > 1:
@@ -648,7 +657,82 @@ def edgewalk(img):
 
    return paths
 
+
+# for now returns the nearest vector. todo: interpolate 3 nearest points.
+def interpolate_motionvectors(motionvectors, position):
+   '''interpolates the given motion vectors for a specified target position'''
+
+   mindist = False
+   minvec = False
+   for v in motionvectors:
+      x,y = v[0]
+      distance = math.pow(math.pow(position[0]-x,2) + math.pow(position[1]-y,2),0.5)
+
+      if not mindist or distance < mindist :
+         mindist = distance
+         minvec = v
+
+   return minvec
+
+def motionvector_rainbow(motionvectors,size):
+   img = pygame.Surface(size)
+   
+   for y in range(0,size[1]):
+      cw("botionvector rainbow",y,size[1])
+      for x in range(0,size[0]):
+         v = interpolate_motionvectors(motionvectors,(x,y))
+         angle = v[1]
+         ampl = v[-1]
+         color = angle_to_color(angle,ampl)
+         img.set_at((x,y),color)
+   return img
+
+
+def facewalk(img_in, mask, motionvectors):
+   '''trace hatching paths'''
+   mask_clone = pygame.Surface(mask.get_size())
+   mask_clone.blit(mask,(0,0))
+
+   radius = 3
+
+   paths = []
+
+   width, height = mask_clone.get_size()
+
+   while True:
+      path = []
+      position = find_pixel_with_color(mask_clone,(255,255,255))
+      if not position:
+         break
+
+      path.append(position)
+
+      mask_clone.set_at(position,(0,0,0)) # deactivate pixel
+      # now, find next pixel
+      while True:
+         vector = interpolate_motionvectors(motionvectors,position)
+         angle = vector[1]
+         #print "!!!",vector
+         dp = [math.cos(angle*2*math.pi/360)*radius,math.sin(angle*2*math.pi/360)*radius]
+         position = [position[0]+int(dp[0]),position[1]+int(dp[1])]
+
+         if position[0]<0 or position[0]>width-1 or position[1]<0 or position[1]>height-1:
+            break
+         if mask_clone.get_at(position) == (0,0,0):
+            break
+         path.append(position)
+         mask_clone.set_at(position,(0,0,0))
+         #pygame.draw.circle(img_clone, (0,0,0), position, radius, 0)
+
+
+
+      paths.append(path)
+   return paths
+
+
+
 def optimizepaths(paths):
+   '''removes redundant polygon points, decrease count, increase error '''
    newpaths = []
    for path in paths:
       newpath = []
@@ -667,6 +751,7 @@ def optimizepaths(paths):
    return newpaths
 
 def pathcombiner(paths):
+   '''for all given paths, combine them if possible to reduce number and increase length'''
    # now we could check each start/end of every path and combine the two paths if they are closer together than a threshold
    # if start/end of same path are together closer than threshold but not equal, add first point to end to close the path
 
@@ -720,7 +805,6 @@ def pathcombiner(paths):
          if redo:
             break
 
-
       if not redo:
          newpaths = []
          for path in paths:
@@ -732,6 +816,7 @@ def pathcombiner(paths):
 
 
 def main():
+   '''main routine'''
    if len(sys.argv)==2: # 1 parameters
 
       pygame.init()
@@ -897,9 +982,12 @@ def main():
       motionvector_drawtmp = pygame.Surface(img_bnw.get_size())
 
 
+      motionvectorss = []
       for i in range(0,facecount):
          print "motion vector face %i"%i
          motionvectors = motionsfind(img_in, bolden(masks[i],5),10) # 10px radius
+         motionvectorss.append(motionvectors)
+
 
 
 
@@ -928,9 +1016,10 @@ def main():
 
             rel_cor = float(cor)/float(cormax)
             rel_corvar = float(corvar)/float(corvar_max)
+            ofs=ofs*(1-rel_cor) * rel_corvar
+            vector.append(ofs)
 
-            ofs=ofs*(1-rel_cor)*5 * rel_corvar
-
+            ofs+=5
 
             if ofs>0:
                endpos = math.cos(ang*2*math.pi/360)*ofs+pos[0],math.sin(ang*2*math.pi/360)*ofs+pos[1]
@@ -938,10 +1027,38 @@ def main():
 
          show_image(display, motionvector_drawtmp, True)
       save_image(motionvector_drawtmp,"vector-"+sys.argv[1])
+
+
+      combv = []
+      for motionvectors in motionvectorss:
+         combv+=motionvectors
+      motionvector_r = motionvector_rainbow(combv,img_bnw.get_size())
+      show_image(display, motionvector_r, True)
+      save_image(motionvector_r,"vectom-"+sys.argv[1])
+
      
 
 
       # 6. generate strokes/hatching for each area. it is not necessary to know the area outline as polygon, just check the individual pixels
+
+      strokepathss = []
+      for i in range(0,len(masks)):
+         strokepaths = facewalk(img_in, masks[i], motionvectorss[i])
+         img_strokepath = pygame.Surface(img_in.get_size())
+         for polygon in strokepaths:
+            lastpoint = False
+            if len(polygon)>1:
+               for point in polygon:
+                  if not lastpoint:
+                     lastpoint = point
+                  pygame.draw.circle(img_strokepath, (0,255,0),point, 3)
+                  pygame.draw.line(img_strokepath, (255,0,0), lastpoint, point, 1)
+                  lastpoint = point
+         strokepathss.append(strokepaths)
+
+         show_image(display, img_strokepath, True)
+         save_image(img_strokepath,"fpath-"+sys.argv[1])
+
 
       # todo.
 
