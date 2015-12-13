@@ -383,6 +383,46 @@ def find_pixel_with_color(img_in, color):
             return (x,y)
    return False
 
+def find_brightest_pixel(img_in):
+   '''returns the 1st coordinate of a pixel of specified color'''
+
+
+   maxbr = 0
+   maxpos = False
+
+   width,height = img_in.get_size()
+   for y in range(0,height):
+      for x in range(0,width):
+         color_in = img_in.get_at((x,y))
+         brightness = sum(color_in[:2])/3
+         if brightness > maxbr:
+            maxbr = brightness
+            maxpos = (x,y)
+   return maxpos, maxbr
+
+
+def find_brightest_pixel_with_spiral(img_in,startpos,maxlen,startang):
+   '''returns the 1st coordinate of a pixel of specified color'''
+   width,height = img_in.get_size()
+
+   maxbr = 0
+   maxpos = False
+
+   for r in range(1,maxlen):
+      for a in range(0+int(startang),360+int(startang)):
+         probepos = [int(startpos[0] + math.cos(a*2*math.pi/360)*r),int(startpos[1] + math.sin(a*2*math.pi/360)*r) ]
+         x,y = probepos
+         if x>=0 and y>=0 and x<width and y<height:
+               color = img_in.get_at((x,y))
+
+               brightness = sum(color[:2])/3
+               if brightness > maxbr:
+                  maxbr = brightness
+                  maxpos = probepos
+   return maxpos, maxbr
+
+         
+
 
 def floodfill(img_in,startpos,color):
    '''floodfill from position with color'''
@@ -551,6 +591,146 @@ def motionsfind(img_in, mask, radius):
   
    return found_points
 
+def edgewalk(img):
+   '''in image showing edges, walks along the edge and creates a polygon path'''
+
+
+
+   img_clone = pygame.Surface(img.get_size())
+   img_clone.blit(img,(0,0))
+
+
+   paths = []
+
+   radius = 3
+
+   brightness_min = 5
+
+   while True:
+      position, br = find_brightest_pixel(img_clone)
+      print position, br
+      if not position or br < brightness_min:
+         break
+      path = []
+      path.append(position)
+      # position is the first pixel we started at.
+      img_clone.set_at(position,(0,0,0)) # deactivate pixel
+      # now, in a spiralish way, find next pixel
+      angle2 = 0
+      while True:
+         position, br = find_brightest_pixel_with_spiral(img_clone,position,radius+3,angle2)
+         if not position or br < brightness_min:
+            break
+         lastdistance = math.pow(math.pow(position[0]-path[-1][0],2) + math.pow(position[1]-path[-1][1],2),0.5)
+         lastangle = 360
+         if len(path)>1:
+            angle1 = math.atan2(position[1]-path[-1][1],position[0]-path[-1][0])
+            angle2 = math.atan2(path[-1][1]-path[-2][1],path[-1][0]-path[-2][0])
+            lastangle = abs(angle1-angle2)*float(360)/(2*math.pi)
+            
+         
+         #if float(lastdistance)*lastangle > 1:
+         if True:
+            path.append(position)
+         pygame.draw.circle(img_clone, (0,0,0), position, radius, 0)
+
+      if len(path)>4:
+         paths.append(path)
+
+
+
+   print "found %i paths"%len(paths)
+
+   paths = pathcombiner(paths)
+   paths = optimizepaths(paths)
+
+   print "optimized to %i paths"%len(paths)
+
+   return paths
+
+def optimizepaths(paths):
+   newpaths = []
+   for path in paths:
+      newpath = []
+      for position in path:
+         lastangle = 360
+         lastdistance = 999
+         if len(newpath)>1:
+            lastdistance = math.pow(math.pow(position[0]-newpath[-1][0],2) + math.pow(position[1]-newpath[-1][1],2),0.5)
+            angle1 = math.atan2(position[1]-newpath[-1][1],position[0]-newpath[-1][0])
+            angle2 = math.atan2(newpath[-1][1]-newpath[-2][1],newpath[-1][0]-newpath[-2][0])
+            lastangle = abs(angle1-angle2)*float(360)/(2*math.pi)
+   
+         if float(lastdistance)*lastangle > 100:
+            newpath.append(position)
+      newpaths.append(newpath)
+   return newpaths
+
+def pathcombiner(paths):
+   # now we could check each start/end of every path and combine the two paths if they are closer together than a threshold
+   # if start/end of same path are together closer than threshold but not equal, add first point to end to close the path
+
+   while True:
+
+      # collect all the start/end points
+      startend_points = []
+      for i in range(0,len(paths)):
+         path = paths[i]
+         if len(path)>1:
+            startend_points.append([i,0,path[0]])
+            startend_points.append([i,-1,path[-1]])
+
+      redo = False
+      # check each to start/end points
+      for i in range(0,len(startend_points)):
+         for j in range(0,len(startend_points)):
+            point1 = startend_points[i]
+            point2 = startend_points[j]
+
+            distance = math.pow(math.pow(point1[2][0]-point2[2][0],2) + math.pow(point1[2][1]-point2[2][1],2),0.5)
+
+
+            if distance < 10 and distance > 2: # magic values, snap below 10, but ignore below 2
+               if point1[0] == point2[0]: # same path
+                  if point1[1] == 0 and point2[1] == -1: # but start/end selected
+                     paths[point1[0]].append(paths[point2[0]][0])
+                     redo = True
+                  if point1[1] == -1 and point2[1] == 0: # but end/start selected
+                     paths[point2[0]].append(paths[point1[0]][0])
+
+               else: # different paths
+                  if point1[1] == 0 and point2[1] == 0: # heading face to face
+                     paths[point2[0]]+=list(reversed(paths[point1[0]]))
+                     paths[point1[0]] = []
+                     redo = True
+                  if point1[1] == -1 and point2[1] == -1: # heading tail to tail
+                     paths[point1[0]]+=list(reversed(paths[point2[0]]))
+                     paths[point2[0]] = []
+                     redo = True
+                  if point1[1] == 0 and point2[1] == -1: # heading face to tail
+                     paths[point2[0]]+=paths[point1[0]]
+                     paths[point1[0]] = []
+                     redo = True
+                  if point1[1] == -1 and point2[1] == 0: # heading tail to face
+                     paths[point1[0]]+=paths[point2[0]]
+                     paths[point2[0]] = []
+                     redo = True
+            if redo:
+               break
+         if redo:
+            break
+
+
+      if not redo:
+         newpaths = []
+         for path in paths:
+            if len(path)>1:
+               newpaths.append(path)
+
+         return newpaths
+                  
+
+
 def main():
    if len(sys.argv)==2: # 1 parameters
 
@@ -642,7 +822,27 @@ def main():
             floodfill(img_bnw, position, (0,0,0)) # eliminate it
 
       img_bnw = blacknwhite(img_bnw,4)
+
+
+      # j) walk the line
+
+      edgepaths = edgewalk(img_blurdif)
+      img_edgepath = pygame.Surface(img_in.get_size())
+      for polygon in edgepaths:
+         lastpoint = False
+         if len(polygon)>1:
+            for point in polygon:
+               if not lastpoint:
+                  lastpoint = point
+               pygame.draw.circle(img_edgepath, (0,255,0),point, 3)
+               pygame.draw.line(img_edgepath, (255,0,0), lastpoint, point, 1)
+               lastpoint = point
+
+      show_image(display, img_edgepath, True)
+      show_image(display, img_edgepath, True)
+      save_image(img_edgepath,"epath-"+sys.argv[1])
       
+      # print edge paths 
 
       # 2. for the room between edges: flood fill until no space left
 
@@ -747,7 +947,7 @@ def main():
 
       # 7. generate strokes for borders.
 
-      # todo.
+      # see 1 j)
 
       # 8. push polygons to HPGL
 
