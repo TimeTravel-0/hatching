@@ -95,6 +95,7 @@ def blacknwhite(img_in,limit=32):
          img_out.set_at((x,y),color_out)
    return img_out
 
+import colorsys
 def get_median_color(img_in,pos,radius, mode = "g", borders=4):
    '''returns the median color of a circular area'''
    width = radius*2
@@ -142,6 +143,23 @@ def get_median_color(img_in,pos,radius, mode = "g", borders=4):
 
       contrast_color = [abs(prev_color[0]-next_color[0]), abs(prev_color[1]-next_color[1]),abs(prev_color[2]-next_color[2]) ]
 
+      prev_hsv = colorsys.rgb_to_hsv(prev_color[0],prev_color[1],prev_color[2])
+      next_hsv = colorsys.rgb_to_hsv(next_color[0],next_color[1],next_color[2])
+
+      hue_difference = abs(prev_hsv[0]-next_hsv[0])*360.0/(2*math.pi)
+
+      saturation_difference = abs(prev_hsv[1]-next_hsv[1])
+
+      if hue_difference>180:
+         hue_difference = 360-hue_difference
+
+      hue_difference = hue_difference*255/180 # normalize...
+      #print hue_difference, prev_hsv, next_hsv
+      #if saturation_difference>0:
+      #   print saturation_difference
+
+      contrast_color.append(hue_difference*saturation_difference)
+
    # brightness approach
 
    if mode == "g":
@@ -170,6 +188,7 @@ def median(img_in, radius, mode, borders):
          img_out.set_at((x,y),color_out)
          color_contrast = [max(color_contrast)]*3
          img_border.set_at((x,y),color_contrast)
+
    return img_out, img_border
 
 
@@ -455,12 +474,20 @@ def id_to_color(id):
    '''calculated unique color from id'''
    return (id%254+1,(id/254)%255,(id/254/255)%255)
 
+import colorsys
 def angle_to_color(angle,length=1):
    '''calculates color based on anlge'''
-   r = int(lcol( (math.sin(angle*2*math.pi/360)+1)*0.5*255*length ))
-   g = int(lcol( (math.sin((angle+120)*2*math.pi/360)+1)*0.5*255*length ))
-   b = int(lcol( (math.sin((angle+240)*2*math.pi/360)+1)*0.5*255*length ))
+
+   r,g,b = colorsys.hsv_to_rgb(angle/360.0 , length, length)
+   #print r,g,b
+   r = int(lcol( (math.sin(angle*2*math.pi/360.0)+1)*0.5*255*length ))
+   g = int(lcol( (math.sin((angle+120)*2*math.pi/360.0)+1)*0.5*255*length ))
+   b = int(lcol( (math.sin((angle+240)*2*math.pi/360.0)+1)*0.5*255*length ))
    return [r,g,b]
+
+   #print angle, r,g,b
+
+   return [lcol(r*255),lcol(g*255),lcol(b*255)]
 
 def color_to_id(color):
    '''calculated unique id from color'''
@@ -657,20 +684,70 @@ def edgewalk(img):
 
    return paths
 
+def anglecombiner(a1,a2):
 
-# for now returns the nearest vector. todo: interpolate 3 nearest points.
+
+   a1=a1%180
+   a2=a2%180
+
+   if abs(a1-a2)>180:
+      a2-=180
+
+   
+   return a1,a2
+
+
 def interpolate_motionvectors(motionvectors, position):
    '''interpolates the given motion vectors for a specified target position'''
+
+   dvpairs = [] # holds distance and vector pairs
 
    mindist = False
    minvec = False
    for v in motionvectors:
       x,y = v[0]
       distance = math.pow(math.pow(position[0]-x,2) + math.pow(position[1]-y,2),0.5)
+      dvpairs.append([distance, v])
 
       if not mindist or distance < mindist :
          mindist = distance
          minvec = v
+
+   sortedpairs = sorted(dvpairs, key=lambda  l:l[0])[:3] # first 3 values of ascending sorted list by distance
+
+   #print sortedpairs
+
+   if sortedpairs[0][0] == 0:
+      d1=9999
+   else:
+      d1 = 1/sortedpairs[0][0]
+   if sortedpairs[1][0] == 0:
+      d2=9999
+   else:
+      d2 = 1/sortedpairs[1][0]
+   if sortedpairs[2][0] == 0:
+      d3 = 9999
+   else:
+      d3 = 1/sortedpairs[2][0]
+   ang1 = sortedpairs[0][1][1]
+   ang2 = sortedpairs[1][1][1]
+   ang3 = sortedpairs[2][1][1]
+   rel1 = sortedpairs[0][1][-1]
+   rel2 = sortedpairs[1][1][-1]
+   rel3 = sortedpairs[2][1][-1]
+   
+   ang1,ang2 = anglecombiner(ang1,ang2)
+   ang2,ang3 = anglecombiner(ang2,ang3)
+   ang3,ang1 = anglecombiner(ang3,ang1)
+
+
+   avg_ang = (ang1*d1+ang2*d2+ang3*d3)/(d1+d2+d3)
+
+   avg_rel = (rel1*d1+rel2*d2+rel3*d3)/(d1+d2+d3)
+   
+
+   return [avg_ang, avg_rel]
+
 
    return minvec
 
@@ -678,12 +755,12 @@ def motionvector_rainbow(motionvectors,size):
    img = pygame.Surface(size)
    
    for y in range(0,size[1]):
-      cw("botionvector rainbow",y,size[1])
+      cw("motionvector rainbow",y,size[1])
       for x in range(0,size[0]):
          v = interpolate_motionvectors(motionvectors,(x,y))
-         angle = v[1]
+         angle = v[0]
          ampl = v[-1]
-         color = angle_to_color(angle,ampl)
+         color = angle_to_color(angle*2,ampl)
          img.set_at((x,y),color)
    return img
 
@@ -693,7 +770,7 @@ def facewalk(img_in, mask, motionvectors):
    mask_clone = pygame.Surface(mask.get_size())
    mask_clone.blit(mask,(0,0))
 
-   radius = 3
+   radius = 5
 
    paths = []
 
@@ -722,7 +799,7 @@ def facewalk(img_in, mask, motionvectors):
             break
          path.append(position)
          mask_clone.set_at(position,(0,0,0))
-         #pygame.draw.circle(img_clone, (0,0,0), position, radius, 0)
+         pygame.draw.circle(mask_clone, (0,0,0), position, radius-1, 0)
 
 
 
@@ -822,6 +899,7 @@ def main():
       pygame.init()
 
 
+
       # the idea is as follows:
       # 1. find/mark edges, because edges mark areas
 
@@ -842,6 +920,23 @@ def main():
  
       
       display = pygame.display.set_mode(dsize)
+
+
+      ### motion vector rainbow test
+      if True:
+         vectors = []
+         for y in range(0,500,50):
+             for x in range(0,500,50):
+                 vec = [[x,y],math.atan2(x-250,y-250)*360/math.pi,0,0,0,1]
+                 #vec = [[x,y],random.random()*360,0,0,0,1]
+                 vectors.append(vec)
+
+         motionvector_r = motionvector_rainbow(vectors,(500,500))
+         show_image(display, motionvector_r, True)
+         save_image(motionvector_r,"vectom-test.png")
+
+
+      ###
 
 
       show_image(display, img_in, False)
@@ -919,7 +1014,7 @@ def main():
             for point in polygon:
                if not lastpoint:
                   lastpoint = point
-               pygame.draw.circle(img_edgepath, (0,255,0),point, 3)
+               pygame.draw.circle(img_edgepath, (128,0,0),point, 2)
                pygame.draw.line(img_edgepath, (255,0,0), lastpoint, point, 1)
                lastpoint = point
 
@@ -1032,6 +1127,7 @@ def main():
       combv = []
       for motionvectors in motionvectorss:
          combv+=motionvectors
+      #print combv
       motionvector_r = motionvector_rainbow(combv,img_bnw.get_size())
       show_image(display, motionvector_r, True)
       save_image(motionvector_r,"vectom-"+sys.argv[1])
@@ -1041,23 +1137,25 @@ def main():
 
       # 6. generate strokes/hatching for each area. it is not necessary to know the area outline as polygon, just check the individual pixels
 
+
+      img_strokepath = pygame.Surface(img_in.get_size())
       strokepathss = []
+      #if False:
       for i in range(0,len(masks)):
          strokepaths = facewalk(img_in, masks[i], motionvectorss[i])
-         img_strokepath = pygame.Surface(img_in.get_size())
          for polygon in strokepaths:
             lastpoint = False
             if len(polygon)>1:
                for point in polygon:
                   if not lastpoint:
                      lastpoint = point
-                  pygame.draw.circle(img_strokepath, (0,255,0),point, 3)
-                  pygame.draw.line(img_strokepath, (255,0,0), lastpoint, point, 1)
+                  #pygame.draw.circle(img_strokepath, (0,255,0),point, 3)
+                  pygame.draw.line(img_strokepath, avgcolors[i], lastpoint, point, 1)
                   lastpoint = point
          strokepathss.append(strokepaths)
 
-         show_image(display, img_strokepath, True)
-         save_image(img_strokepath,"fpath-"+sys.argv[1])
+      show_image(display, img_strokepath, True)
+      save_image(img_strokepath,"fpath-"+sys.argv[1])
 
 
       # todo.
