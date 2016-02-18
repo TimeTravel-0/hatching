@@ -27,6 +27,10 @@
 #
 
 import sys
+
+from gui_eyecandy import *
+from file_handling import *
+
 def cw(text, curr, max):
    '''console status output function'''
    print "%s [%3i] %i of %i   \r"%(text,100*curr/max,curr,max),
@@ -36,6 +40,7 @@ def cw(text, curr, max):
 
    sys.stdout.flush()
 
+# move to gui_eyecandy
 def show_image(display, img, reloc):
       '''shifts images in display and adds the new one ; fifo-like'''
       w,h = 3,3
@@ -54,22 +59,26 @@ def show_image(display, img, reloc):
       display.blit(resimg,(0,0))
       pygame.display.flip()
 
+# file_handling
 def fn_comb(filename_in,addition):
    '''inserts addition right before the suffix'''
    filename_split = filename_in.split(".")
    new_filename=".".join(filename_split[:-1]) +"-"+addition +"." + filename_split[-1]
    return new_filename
 
+# file_handling
 def load_image(input_file):
    '''loads an image via pygame and returns the image object'''
    print "loading \"%s\""%input_file
    return pygame.image.load(input_file)
 
+# file_handling
 def save_image(img, output_file):
    '''saves an image via pygame to a file'''
    print "saving \"%s\""%output_file
    pygame.image.save(img,output_file)
 
+# colors
 def lcol(a):
    '''limits the range of a value to 0...255 to prevent overflow/out of range errors'''
    if a<0:
@@ -78,6 +87,7 @@ def lcol(a):
       return 255
    return a
 
+# image_filters
 def blacknwhite(img_in,limit=32):
    '''converts an image to black and white pixels by threshold'''
    width,height = img_in.get_size()
@@ -257,6 +267,7 @@ def edgedetect(img_in, r=1, offset=(0,0)):
          img_out.set_at((x,y),color_out)
    return img_out
 
+# image_filters
 def blur(img_in, r=3):
    '''blurs an image with defined averaging radius'''
    width,height = img_in.get_size()
@@ -335,7 +346,7 @@ def lazyblur(img_in, r=3):
 
    return img_out
 
-
+# image_filters
 def blend(img1,img2):
    '''take max val for each pixel from each image'''
    width,height = img1.get_size()
@@ -351,6 +362,7 @@ def blend(img1,img2):
          img_out.set_at((x,y),color_out)
    return img_out
 
+# image_filters
 def addmul(img1,img2,m=1,n=1):
    '''img1 *n + img2*m'''
    width,height = img1.get_size()
@@ -446,7 +458,7 @@ def find_brightest_pixel_with_spiral(img_in,startpos,maxlen,startang):
 
          
 
-
+# image_filters
 def floodfill(img_in,startpos,color):
    '''floodfill from position with color'''
    positions_todo = [] # list of points to draw/check
@@ -474,9 +486,16 @@ def floodfill(img_in,startpos,color):
 
    return pixelcounter
 
+
+# colors
 def id_to_color(id):
    '''calculated unique color from id'''
    return (id%254+1,(id/254)%255,(id/254/255)%255)
+
+def color_to_id(color):
+   '''calculated unique id from color'''
+   return color[0]-1 + color[1]*255 + color[2]*255*255
+
 
 import colorsys
 def angle_to_color(angle,length=1):
@@ -493,9 +512,6 @@ def angle_to_color(angle,length=1):
 
    return [lcol(r*255),lcol(g*255),lcol(b*255)]
 
-def color_to_id(color):
-   '''calculated unique id from color'''
-   return color[0]-1 + color[1]*255 + color[2]*255*255
 
 
 def mask(img_in, color_mask):
