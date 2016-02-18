@@ -54,7 +54,11 @@ def show_image(display, img, reloc):
       display.blit(resimg,(0,0))
       pygame.display.flip()
 
-
+def fn_comb(filename_in,addition):
+   '''inserts addition right before the suffix'''
+   filename_split = filename_in.split(".")
+   new_filename=".".join(filename_split[:-1]) +"-"+addition +"." + filename_split[-1]
+   return new_filename
 
 def load_image(input_file):
    '''loads an image via pygame and returns the image object'''
@@ -923,7 +927,7 @@ def main():
 
 
       ### motion vector rainbow test
-      if True:
+      if False:
          vectors = []
          for y in range(0,500,50):
              for x in range(0,500,50):
@@ -953,7 +957,7 @@ def main():
       show_image(display, img_in, True)
       show_image(display, img_border, True)
 
-      save_image(img_border,"bordem-"+sys.argv[1])
+      save_image(img_border,fn_comb(sys.argv[1],"bordem"))
 
 
 
@@ -1020,7 +1024,7 @@ def main():
 
       show_image(display, img_edgepath, True)
       show_image(display, img_edgepath, True)
-      save_image(img_edgepath,"epath-"+sys.argv[1])
+      save_image(img_edgepath,fn_comb(sys.argv[1],"epath"))
       
       # print edge paths 
 
@@ -1070,7 +1074,7 @@ def main():
 
          show_image(display, masked_originals_drawtmp, False)
 
-      save_image(masked_originals_drawtmp,"tmp-"+sys.argv[1])
+      save_image(masked_originals_drawtmp,fn_comb(sys.argv[1],"tmp"))
 
 
       # 5. motion vector find
@@ -1121,7 +1125,7 @@ def main():
                pygame.draw.line(motionvector_drawtmp, avgcolors[i], pos, endpos, 1)
 
          show_image(display, motionvector_drawtmp, True)
-      save_image(motionvector_drawtmp,"vector-"+sys.argv[1])
+      save_image(motionvector_drawtmp,fn_comb(sys.argv[1],"vector"))
 
 
       combv = []
@@ -1130,7 +1134,7 @@ def main():
       #print combv
       motionvector_r = motionvector_rainbow(combv,img_bnw.get_size())
       show_image(display, motionvector_r, True)
-      save_image(motionvector_r,"vectom-"+sys.argv[1])
+      save_image(motionvector_r,fn_comb(sys.argv[1],"vectom"))
 
      
 
@@ -1155,7 +1159,7 @@ def main():
          strokepathss.append(strokepaths)
 
       show_image(display, img_strokepath, True)
-      save_image(img_strokepath,"fpath-"+sys.argv[1])
+      save_image(img_strokepath,fn_comb(sys.argv[1],"fpath"))
 
 
       # todo.
