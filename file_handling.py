@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+import pygame
+
 
 def fn_comb(filename_in,addition):
    '''inserts addition right before the suffix'''
@@ -16,3 +18,27 @@ def save_image(img, output_file):
    '''saves an image via pygame to a file'''
    print "saving \"%s\""%output_file
    pygame.image.save(img,output_file)
+
+# rename...   
+def gen_single_color(size, color):
+   '''generates image with single color'''
+   img_out = pygame.Surface(size)
+   img_out.fill(color)
+   return img_out
+   
+
+
+if __name__ == "__main__": # test!
+    
+    print "testing fn_comb"
+    a = fn_comb("../foo/bar/xd.jpg","wasd123")
+    b = "../foo/bar/xd-wasd123.jpg"
+    if a != b:
+       print "Error: %s %s"%(a,b)
+    print "ok."
+    
+    
+    print "testing load_image"
+    #a = load_image("/dev/null")
+    
+    

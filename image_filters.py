@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+from console import *
+from colors import *
+import pygame
+
 def blacknwhite(img_in,limit=32):
    '''converts an image to black and white pixels by threshold'''
    width,height = img_in.get_size()
@@ -21,7 +25,7 @@ def blacknwhite(img_in,limit=32):
          img_out.set_at((x,y),color_out)
    return img_out
    
-
+# needs avg brightness!
 def blur(img_in, r=3):
    '''blurs an image with defined averaging radius'''
    width,height = img_in.get_size()
@@ -161,4 +165,32 @@ def floodfill(img_in,startpos,color):
                positions_todo.append(trypos)
 
    return pixelcounter
+
+def mask(img_in, color_mask):
+   '''create mask (if color at pixel = function parameter white, else black)'''
+   width,height = img_in.get_size()
+   img_out = pygame.Surface(img_in.get_size())
+   for y in range(0,height):
+      cw("mask",y,height)
+      for x in range(0,width):
+         color_in = img_in.get_at((x,y))
+         if color_in[:2] == color_mask[:2]: # color of img is same as color specified, copy!
+            color_out = (255,255,255)
+         else:
+            color_out = (0,0,0)
+         img_out.set_at((x,y), color_out)
+   return img_out
+   
+def multiply(img_in1, img_in2):
+   '''img1 * img2'''
+   width,height = img_in1.get_size()
+   img_out = pygame.Surface(img_in1.get_size())
+   for y in range(0,height):
+      cw("multiply",y,height)
+      for x in range(0,width):
+         color_in1 = img_in1.get_at((x,y))
+         color_in2 = img_in2.get_at((x,y))
+         color_out = [ color_in1[0] * color_in2[0] / 255 , color_in1[1] * color_in2[1] / 255 , color_in1[2] * color_in2[2] / 255 ] 
+         img_out.set_at((x,y), color_out)
+   return img_out
 

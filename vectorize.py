@@ -28,86 +28,18 @@
 
 import sys
 
+from console import *
+
 from gui_eyecandy import *
 from file_handling import *
+from colors import *
+from image_filters import *
+from paths import *
 
-def cw(text, curr, max):
-   '''console status output function'''
-   print "%s [%3i] %i of %i   \r"%(text,100*curr/max,curr,max),
 
-   if curr >= max-1:
-      print "\n",
 
-   sys.stdout.flush()
 
-# move to gui_eyecandy
-def show_image(display, img, reloc):
-      '''shifts images in display and adds the new one ; fifo-like'''
-      w,h = 3,3
 
-      d = display.get_size()
-
-      # scale img to display/3th
-      newsize = [d[0]/w,d[1]/h]
-      resimg = pygame.transform.scale(img,newsize)
-      s = resimg.get_size()
-
-      if reloc:
-         display.blit(display,(-s[0]*(w-1),s[1]))
-         display.blit(display,(s[0],0))
-
-      display.blit(resimg,(0,0))
-      pygame.display.flip()
-
-# file_handling
-def fn_comb(filename_in,addition):
-   '''inserts addition right before the suffix'''
-   filename_split = filename_in.split(".")
-   new_filename=".".join(filename_split[:-1]) +"-"+addition +"." + filename_split[-1]
-   return new_filename
-
-# file_handling
-def load_image(input_file):
-   '''loads an image via pygame and returns the image object'''
-   print "loading \"%s\""%input_file
-   return pygame.image.load(input_file)
-
-# file_handling
-def save_image(img, output_file):
-   '''saves an image via pygame to a file'''
-   print "saving \"%s\""%output_file
-   pygame.image.save(img,output_file)
-
-# colors
-def lcol(a):
-   '''limits the range of a value to 0...255 to prevent overflow/out of range errors'''
-   if a<0:
-      return 0
-   if a>255:
-      return 255
-   return a
-
-# image_filters
-def blacknwhite(img_in,limit=32):
-   '''converts an image to black and white pixels by threshold'''
-   width,height = img_in.get_size()
-   img_out = pygame.Surface(img_in.get_size())
-   for y in range(0,height):
-      cw("blacknwhite",y,height)
-      for x in range(0,width):
-         color_in = img_in.get_at((x,y))
-
-         # slow like hell. generate one blured image and diff them would be better
-         #avgb = get_average_brightness(img_in,(x,y),32) # radius 3
-
-         #limit = avgb/2	
-
-         color_out = (255,255,255)
-         if color_in[0]+color_in[1]+color_in[2] < limit*3:
-            color_out = (0,0,0)
-
-         img_out.set_at((x,y),color_out)
-   return img_out
 
 import colorsys
 def get_median_color(img_in,pos,radius, mode = "g", borders=4):
@@ -285,101 +217,6 @@ def blur(img_in, r=3):
          img_out.set_at((x,y),color_out)
    return img_out
 
-def lazyblur(img_in, r=3):
-   '''blurs an image with defined averaging radius'''
-   width,height = img_in.get_size()
-   img_out = pygame.Surface(img_in.get_size())
-
-   # for each direction x/y +/- do running average per r,g,b
-
-   sm = 1-1/float(r)
-
-   # x positive
-   img_blur1 = pygame.Surface(img_in.get_size())
-   for y in range(0,height):
-      cw("lazyblur a",y,height)
-      r,g,b = img_in.get_at((0,y))[:3]
-      for x in range(0,width):
-         r2,g2,b2 = img_in.get_at((x,y))[:3]
-         r=float(r*sm)+float(r2*(1-sm))
-         g=float(g*sm)+float(g2*(1-sm))
-         b=float(b*sm)+float(b2*(1-sm))
-         img_blur1.set_at((x,y),(r,g,b))
-
-   # x negative
-   img_blur2 = pygame.Surface(img_in.get_size())
-   for y in range(0,height):
-      cw("lazyblur b",y,height)
-      r,g,b = img_in.get_at((width-1,y))[:3]
-      for x in list(reversed(range(0,width))):
-         r2,g2,b2 = img_in.get_at((x,y))[:3]
-         r=float(r*sm)+float(r2*(1-sm))
-         g=float(g*sm)+float(g2*(1-sm))
-         b=float(b*sm)+float(b2*(1-sm))
-         img_blur2.set_at((x,y),(r,g,b))
-
-   # y positive
-   img_blur3 = pygame.Surface(img_in.get_size())
-   for x in range(0,width):
-      cw("lazyblur c",x,width)
-      r,g,b = img_in.get_at((x,0))[:3]
-      for y in range(0,height):
-         r2,g2,b2 = img_in.get_at((x,y))[:3]
-         r=float(r*sm)+float(r2*(1-sm))
-         g=float(g*sm)+float(g2*(1-sm))
-         b=float(b*sm)+float(b2*(1-sm))
-         img_blur3.set_at((x,y),(r,g,b))
-
-   # y negative
-   img_blur4 = pygame.Surface(img_in.get_size())
-   for x in range(0,width):
-      cw("lazyblur d",x,width)
-      r,g,b = img_in.get_at((x,height-1))[:3]
-      for y in list(reversed(range(0,height))):
-         r2,g2,b2 = img_in.get_at((x,y))[:3]
-         r=float(r*sm)+float(r2*(1-sm))
-         g=float(g*sm)+float(g2*(1-sm))
-         b=float(b*sm)+float(b2*(1-sm))
-         img_blur4.set_at((x,y),(r,g,b))
-
-   img_out = addmul( addmul(img_blur1,img_blur2,0.5,0.5) , addmul(img_blur3,img_blur4,0.5,0.5) , 0.5,0.5)
-
-   return img_out
-
-# image_filters
-def blend(img1,img2):
-   '''take max val for each pixel from each image'''
-   width,height = img1.get_size()
-   img_out = pygame.Surface(img1.get_size())
-   for y in range(0,height):
-      cw("blend",y,height)
-      for x in range(0,width):
-         color_in1 = img1.get_at((x,y))
-         color_in2 = img2.get_at((x,y))
-
-         color_out = [max(color_in1[0],color_in2[0]),max(color_in1[1],color_in2[1]),max(color_in1[2],color_in2[2])]
-
-         img_out.set_at((x,y),color_out)
-   return img_out
-
-# image_filters
-def addmul(img1,img2,m=1,n=1):
-   '''img1 *n + img2*m'''
-   width,height = img1.get_size()
-   img_out = pygame.Surface(img1.get_size())
-   for y in range(0,height):
-      cw("addmul",y,height)
-      for x in range(0,width):
-         color_in1 = img1.get_at((x,y))
-         color_in2 = img2.get_at((x,y))
-
-         color_out = [lcol(color_in1[0]*n+color_in2[0]*m),lcol(color_in1[1]*n+color_in2[1]*m),lcol(color_in1[2]*n+color_in2[2]*m)]
-
-         img_out.set_at((x,y),color_out)
-   return img_out
-
-
-
 def bolden(img_in, r=3):
    '''draw along maximum brightness with circle radius r'''
    width,height = img_in.get_size()
@@ -459,42 +296,6 @@ def find_brightest_pixel_with_spiral(img_in,startpos,maxlen,startang):
          
 
 # image_filters
-def floodfill(img_in,startpos,color):
-   '''floodfill from position with color'''
-   positions_todo = [] # list of points to draw/check
-   positions_todo.append(startpos)
-
-   pixelcounter = 0
-
-   width, height = img_in.get_size()
-
-   startcolor = img_in.get_at(startpos)
-   while len(positions_todo)>0:
-
-      # get point from list:
-      pos=positions_todo.pop()
-      img_in.set_at(pos, color)
-      pixelcounter+=1
-      # offsets to try
-      offsets = [[1,0],[0,1],[-1,0],[0,-1]]
-      for offset in offsets:
-         trypos = (pos[0]+offset[0],pos[1]+offset[1])
-         #print trypos
-         if trypos[0]>=0 and trypos[1]>=0 and trypos[0]<width and trypos[1]<height:
-            if img_in.get_at(trypos) == startcolor: # color at offset is same as on start
-               positions_todo.append(trypos)
-
-   return pixelcounter
-
-
-# colors
-def id_to_color(id):
-   '''calculated unique color from id'''
-   return (id%254+1,(id/254)%255,(id/254/255)%255)
-
-def color_to_id(color):
-   '''calculated unique id from color'''
-   return color[0]-1 + color[1]*255 + color[2]*255*255
 
 
 import colorsys
@@ -514,20 +315,7 @@ def angle_to_color(angle,length=1):
 
 
 
-def mask(img_in, color_mask):
-   '''create mask (if color at pixel = function parameter white, else black)'''
-   width,height = img_in.get_size()
-   img_out = pygame.Surface(img_in.get_size())
-   for y in range(0,height):
-      cw("mask",y,height)
-      for x in range(0,width):
-         color_in = img_in.get_at((x,y))
-         if color_in[:2] == color_mask[:2]: # color of img is same as color specified, copy!
-            color_out = (255,255,255)
-         else:
-            color_out = (0,0,0)
-         img_out.set_at((x,y), color_out)
-   return img_out
+
 
 def get_avg_color(img_in, mask):
    '''get average color for mask area'''
@@ -547,25 +335,6 @@ def get_avg_color(img_in, mask):
       return [0,0,0]
    return [color_avg_sum[0]/color_avg_cnt, color_avg_sum[1]/color_avg_cnt, color_avg_sum[2]/color_avg_cnt]
 
-
-def gen_single_color(size, color):
-   '''generates image with single color'''
-   img_out = pygame.Surface(size)
-   img_out.fill(color)
-   return img_out
-
-def multiply(img_in1, img_in2):
-   '''img1 * img2'''
-   width,height = img_in1.get_size()
-   img_out = pygame.Surface(img_in1.get_size())
-   for y in range(0,height):
-      cw("multiply",y,height)
-      for x in range(0,width):
-         color_in1 = img_in1.get_at((x,y))
-         color_in2 = img_in2.get_at((x,y))
-         color_out = [ color_in1[0] * color_in2[0] / 255 , color_in1[1] * color_in2[1] / 255 , color_in1[2] * color_in2[2] / 255 ] 
-         img_out.set_at((x,y), color_out)
-   return img_out
 
 
 
@@ -772,6 +541,7 @@ def interpolate_motionvectors(motionvectors, position):
    return minvec
 
 def motionvector_rainbow(motionvectors,size):
+   '''render motionvectors into a rainbow image (angl. to color mapping)'''
    img = pygame.Surface(size)
    
    for y in range(0,size[1]):
@@ -784,7 +554,7 @@ def motionvector_rainbow(motionvectors,size):
          img.set_at((x,y),color)
    return img
 
-
+# buggy.
 def facewalk(img_in, mask, motionvectors):
    '''trace hatching paths'''
    mask_clone = pygame.Surface(mask.get_size())
@@ -826,89 +596,6 @@ def facewalk(img_in, mask, motionvectors):
       paths.append(path)
    return paths
 
-
-
-def optimizepaths(paths):
-   '''removes redundant polygon points, decrease count, increase error '''
-   newpaths = []
-   for path in paths:
-      newpath = []
-      for position in path:
-         lastangle = 360
-         lastdistance = 999
-         if len(newpath)>1:
-            lastdistance = math.pow(math.pow(position[0]-newpath[-1][0],2) + math.pow(position[1]-newpath[-1][1],2),0.5)
-            angle1 = math.atan2(position[1]-newpath[-1][1],position[0]-newpath[-1][0])
-            angle2 = math.atan2(newpath[-1][1]-newpath[-2][1],newpath[-1][0]-newpath[-2][0])
-            lastangle = abs(angle1-angle2)*float(360)/(2*math.pi)
-   
-         if float(lastdistance)*lastangle > 100:
-            newpath.append(position)
-      newpaths.append(newpath)
-   return newpaths
-
-def pathcombiner(paths):
-   '''for all given paths, combine them if possible to reduce number and increase length'''
-   # now we could check each start/end of every path and combine the two paths if they are closer together than a threshold
-   # if start/end of same path are together closer than threshold but not equal, add first point to end to close the path
-
-   while True:
-
-      # collect all the start/end points
-      startend_points = []
-      for i in range(0,len(paths)):
-         path = paths[i]
-         if len(path)>1:
-            startend_points.append([i,0,path[0]])
-            startend_points.append([i,-1,path[-1]])
-
-      redo = False
-      # check each to start/end points
-      for i in range(0,len(startend_points)):
-         for j in range(0,len(startend_points)):
-            point1 = startend_points[i]
-            point2 = startend_points[j]
-
-            distance = math.pow(math.pow(point1[2][0]-point2[2][0],2) + math.pow(point1[2][1]-point2[2][1],2),0.5)
-
-
-            if distance < 10 and distance > 2: # magic values, snap below 10, but ignore below 2
-               if point1[0] == point2[0]: # same path
-                  if point1[1] == 0 and point2[1] == -1: # but start/end selected
-                     paths[point1[0]].append(paths[point2[0]][0])
-                     redo = True
-                  if point1[1] == -1 and point2[1] == 0: # but end/start selected
-                     paths[point2[0]].append(paths[point1[0]][0])
-
-               else: # different paths
-                  if point1[1] == 0 and point2[1] == 0: # heading face to face
-                     paths[point2[0]]+=list(reversed(paths[point1[0]]))
-                     paths[point1[0]] = []
-                     redo = True
-                  if point1[1] == -1 and point2[1] == -1: # heading tail to tail
-                     paths[point1[0]]+=list(reversed(paths[point2[0]]))
-                     paths[point2[0]] = []
-                     redo = True
-                  if point1[1] == 0 and point2[1] == -1: # heading face to tail
-                     paths[point2[0]]+=paths[point1[0]]
-                     paths[point1[0]] = []
-                     redo = True
-                  if point1[1] == -1 and point2[1] == 0: # heading tail to face
-                     paths[point1[0]]+=paths[point2[0]]
-                     paths[point2[0]] = []
-                     redo = True
-            if redo:
-               break
-         if redo:
-            break
-
-      if not redo:
-         newpaths = []
-         for path in paths:
-            if len(path)>1:
-               newpaths.append(path)
-
-         return newpaths
                   
 
 
