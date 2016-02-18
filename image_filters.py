@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-from console import *
-from colors import *
+from lib_console import *
+from lib_colors import *
 import pygame
 
 def blacknwhite(img_in,limit=32):

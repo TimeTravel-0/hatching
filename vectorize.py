@@ -28,13 +28,13 @@
 
 import sys
 
-from console import *
+from lib_console import *
 
 from gui_eyecandy import *
-from file_handling import *
-from colors import *
+from lib_imagefile import *
+from lib_colors import *
 from image_filters import *
-from paths import *
+from lib_paths import *
 
 
 
