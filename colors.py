@@ -16,4 +16,25 @@ def id_to_color(id):
 
 def color_to_id(color):
    '''calculated unique id from color'''
-   return color[0]-1 + color[1]*255 + color[2]*255*255
+   return color[0]-1 + color[1]*254 + color[2]*254*255
+
+
+if __name__ == "__main__": # test!
+
+   print "testing id_to_color and color_to_id"
+   for id in range(0,254*255*255):
+      color = id_to_color(id)
+      id_re = color_to_id(color)
+      if id != id_re:
+         print "Error: id=%i, color=%s, id=%i"%(id, color, id_re)
+         break
+   print "ok."
+
+
+   print "testing lcol"
+   for z in range(-255,255+255):
+      y = lcol(z)
+      if y<0 or y>255:
+         print "Error: %z %i"%(z,y) 
+         break
+   print "ok."
