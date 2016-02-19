@@ -18,8 +18,10 @@ def optimizepaths(paths):
             angle1 = math.atan2(position[1]-newpath[-1][1],position[0]-newpath[-1][0])
             angle2 = math.atan2(newpath[-1][1]-newpath[-2][1],newpath[-1][0]-newpath[-2][0])
             lastangle = abs(angle1-angle2)*float(360)/(2*math.pi)
-   
-         if float(lastdistance)*lastangle > 100:
+
+         # removal should not only be based on the angle to the last point but on the angle to the next point, too (e.g. keep sharp edges!)
+         if lastdistance > 10 or lastangle > 5:
+#         if float(lastdistance)*lastangle > 100:
             newpath.append(position)
       newpaths.append(newpath)
    return newpaths
@@ -30,7 +32,7 @@ def pathcombiner(paths_in):
    '''for all given paths, combine them if possible to reduce number and increase length'''
    # now we could check each start/end of every path and combine the two paths if they are closer together than a threshold
    # if start/end of same path are together closer than threshold but not equal, add first point to end to close the path
-
+   # for now it takes the FIRST candidate that fits, not the best (=nearest) one!
 
    paths = []
    for p in paths_in:
@@ -60,11 +62,11 @@ def pathcombiner(paths_in):
                if point1[0] == point2[0]: # same path
                   if point1[1] == 0 and point2[1] == -1: # but start/end selected = close loop
                      paths[point1[0]].append(paths[point2[0]][0])
-                     print "loop closed"
+                     print "loop closed start-end"
                      redo = True
                   if point1[1] == -1 and point2[1] == 0: # but end/start selected = close loop
                      paths[point2[0]].append(paths[point1[0]][0])
-                     print "loop closed"
+                     print "loop closed end-start"
                      redo = True
 
                else: # different paths
@@ -102,6 +104,8 @@ def pathcombiner(paths_in):
             if len(path)>1:
                newpaths.append(path)
 
+         print "reduced %i paths to %i paths"%(len(paths_in),len(newpaths))
+	
          return newpaths
          
 
@@ -147,7 +151,7 @@ def edgewalk(img):
             path.append(position)
          pygame.draw.circle(img_clone, (0,0,0), position, radius, 0)
 
-      if len(path)>4:
+      if len(path)>2:
          paths.append(path)
 
 
