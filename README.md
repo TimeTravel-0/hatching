@@ -21,3 +21,5 @@
 
  another, yet unimplemented, part is to write all the polygons
  out in HPGL form.
+
+ cleanup and split-up in multiple files in in progress (seperate library/supporting stuff from high level logic)

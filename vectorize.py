@@ -95,7 +95,7 @@ def facewalk(img_in, mask, motionvectors):
 
 def main():
    '''main routine'''
-   if len(sys.argv)==2: # 1 parameters
+   if len(sys.argv)>=2: # 1 parameters
 
       pygame.init()
 
@@ -105,6 +105,12 @@ def main():
       # 1. find/mark edges, because edges mark areas
 
       input_file = sys.argv[1]
+
+
+      bnw_mode = False
+      if len(sys.argv)>=3:
+          bnw_mode = (sys.argv[2]=="bw")
+
       img_in = load_image(input_file)
       insize = img_in.get_size()
 
@@ -150,11 +156,18 @@ def main():
       # a) first we run an median filter to get rid of noise but keep edges
       # as the median filter already gets a list of all pixels around the analyzed coordinate
       # it got an additional part to calculate the contrast.
-      img_in, img_border = median(img_in,3,"c",3)
-      show_image(display, img_in, True)
-      show_image(display, img_border, True)
 
-      save_image(img_border,fn_comb(sys.argv[1],"bordem"))
+      if bnw_mode == False:
+         img_in, img_border = median(img_in,3,"c",3)
+         show_image(display, img_in, True)
+         show_image(display, img_border, True)
+         save_image(img_border,fn_comb(sys.argv[1],"bordem"))
+      else:
+         # just create inverted image...
+         img_white = gen_single_color(img_in.get_size(),(255,255,255))
+         img_border = addmul(img_in,img_white,1.0,-1.0)
+         show_image(display, img_border, True)
+
 
 
 
@@ -184,6 +197,33 @@ def main():
       img_blurdif = addmul(img_blend, img_blur, -1)
       show_image(display, img_blurdif, True)
 
+
+
+
+      # j) walk the line
+
+      edgepaths = edgewalk(img_blurdif)
+      rz=4
+      rendersize = [img_in.get_size()[0]*rz,img_in.get_size()[1]*rz]
+      img_edgepath = pygame.Surface(rendersize)
+      for polygon in edgepaths:
+         lastpoint = False
+         if len(polygon)>1:
+            for point in polygon:
+               if not lastpoint:
+                  lastpoint = point
+               pygame.draw.circle(img_edgepath, (0,128,0),[point[0]*rz,point[1]*rz], 5)
+               pygame.draw.line(img_edgepath, (255,0,0), [lastpoint[0]*rz,lastpoint[1]*rz], [point[0]*rz,point[1]*rz], 1)
+               lastpoint = point
+
+      show_image(display, img_edgepath, True)
+      save_image(img_edgepath,fn_comb(sys.argv[1],"epath"))
+
+      # print edge paths 
+
+
+
+
       # g) bolden edges
       img_bold = bolden(img_blurdif,1)
       show_image(display, img_bold, True)
@@ -191,6 +231,8 @@ def main():
       # h) convert to black and white via limit
       img_bnw = blacknwhite(img_bold,12)  
       show_image(display, img_bnw, True)
+      show_image(display, img_bnw, True)
+
 
       # i) isles smaller than limit get eliminated
       while True:
@@ -205,25 +247,6 @@ def main():
       img_bnw = blacknwhite(img_bnw,4)
 
 
-      # j) walk the line
-
-      edgepaths = edgewalk(img_blurdif)
-      img_edgepath = pygame.Surface(img_in.get_size())
-      for polygon in edgepaths:
-         lastpoint = False
-         if len(polygon)>1:
-            for point in polygon:
-               if not lastpoint:
-                  lastpoint = point
-               pygame.draw.circle(img_edgepath, (128,0,0),point, 2)
-               pygame.draw.line(img_edgepath, (255,0,0), lastpoint, point, 1)
-               lastpoint = point
-
-      show_image(display, img_edgepath, True)
-      show_image(display, img_edgepath, True)
-      save_image(img_edgepath,fn_comb(sys.argv[1],"epath"))
-      
-      # print edge paths 
 
       # 2. for the room between edges: flood fill until no space left
 
