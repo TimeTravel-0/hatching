@@ -3,10 +3,12 @@
 import pygame
 
 
-def fn_comb(filename_in,addition):
+def fn_comb(filename_in,addition,newsuffix=""):
    '''inserts addition right before the suffix'''
    filename_split = filename_in.split(".")
-   new_filename=".".join(filename_split[:-1]) +"-"+addition +"." + filename_split[-1]
+   if newsuffix == "":
+      newsuffix = filename_split[-1]
+   new_filename=".".join(filename_split[:-1]) +"-"+addition +"." + newsuffix
    return new_filename
 
 def load_image(input_file):

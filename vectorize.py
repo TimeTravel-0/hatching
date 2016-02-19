@@ -40,7 +40,7 @@ from lib_motionvectors import *
 
 
 
-
+from lib_hpgl import *
 
 
 
@@ -218,6 +218,12 @@ def main():
 
       show_image(display, img_edgepath, True)
       save_image(img_edgepath,fn_comb(sys.argv[1],"epath"))
+
+
+
+      c = hpgl_usepen(1,(0,0,0))
+      c+= hpgl_frompaths(img_edgepath)
+      hpgl_tofile(c, fn_comb(sys.argv[1],"epath","hpgl"))
 
       # print edge paths 
 
