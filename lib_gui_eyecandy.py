@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
 import pygame
+from lib_imagefile import *
+
 
 def show_image(display, img, reloc=True, dims=(3,3)):
       '''shifts images in display and adds the new one ; fifo-like'''
