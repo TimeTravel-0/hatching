@@ -11,12 +11,12 @@ def fn_comb(filename_in,addition):
 
 def load_image(input_file):
    '''loads an image via pygame and returns the image object'''
-   print "loading \"%s\""%input_file
+   print "loading \"%s\""%input_file # should use cw command
    return pygame.image.load(input_file)
 
 def save_image(img, output_file):
    '''saves an image via pygame to a file'''
-   print "saving \"%s\""%output_file
+   print "saving \"%s\""%output_file # should use cw command
    pygame.image.save(img,output_file)
 
 # rename...   
@@ -36,9 +36,11 @@ if __name__ == "__main__": # test!
     if a != b:
        print "Error: %s %s"%(a,b)
     print "ok."
-    
-    
-    print "testing load_image"
-    #a = load_image("/dev/null")
+
+    print "testing gen_single_color, save_image and load_image"
+    a = gen_single_color((320,240),(255,0,255))
+    save_image(a, "/tmp/hatching_test.jpg")
+    b = load_image("/tmp/hatching_test.jpg")
+    print "ok."
     
     
