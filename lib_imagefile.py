@@ -20,7 +20,7 @@ def save_image(img, output_file):
    pygame.image.save(img,output_file)
 
 # rename...   
-def gen_single_color(size, color):
+def gen_single_color(size, color=(0,0,0)):
    '''generates image with single color'''
    img_out = pygame.Surface(size)
    img_out.fill(color)
