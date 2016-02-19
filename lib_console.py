@@ -10,3 +10,11 @@ def cw(text, curr, max):
       print "\n",
 
    sys.stdout.flush()
+
+
+if __name__ == "__main__": # test
+   print "testing cw"
+
+   for i in range(0,123):
+      cw("testing cw",i,123)
+   print "ok."
