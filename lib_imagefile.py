@@ -21,8 +21,8 @@ def image_save(img, output_file):
    print "saving \"%s\""%output_file # should use cw command
    pygame.image.save(img,output_file)
 
-.   
-def image_show(size, color=(0,0,0)):
+   
+def image_create(size, color=(0,0,0)):
    '''generates image with single color'''
    img_out = pygame.Surface(size)
    img_out.fill(color)
@@ -40,7 +40,7 @@ def image_show(display, img, reloc=True, dims=(3,3)):
    s = resimg.get_size()
 
    if reloc:
-      storepic = image_show((newsize[0],d[1]))# store right row
+      storepic = image_create((newsize[0],d[1]))# store right row
       storepic.blit(display,(-(d[0]-newsize[0]),0))
       display.blit(display,(s[0],0)) # move display one line to the right
       display.blit(storepic,(0,newsize[1]))

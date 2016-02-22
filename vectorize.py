@@ -133,17 +133,17 @@ def main():
                  vectors.append(vec)
 
          motionvector_r = motionvector_rainbow(vectors,(500,500))
-         show_image(display, motionvector_r, True)
+         image_show(display, motionvector_r, True)
          image_save(motionvector_r,"vectom-test.png")
 
 
       ###
 
 
-      show_image(display, img_in, False)
+      image_show(display, img_in, False)
 
       #img_blurx = lazyblur(img_in,3)
-      #show_image(display,img_blurx, True)
+      #image_show(display,img_blurx, True)
       #time.sleep(5)
 
 
@@ -153,29 +153,29 @@ def main():
 
       if bnw_mode == False:
          img_in, img_border = median(img_in,3,"c",3)
-         show_image(display, img_in, True)
-         show_image(display, img_border, True)
+         image_show(display, img_in, True)
+         image_show(display, img_border, True)
          image_save(img_border,fn_comb(sys.argv[1],"bordem"))
       else:
          # just create inverted image...
-         img_white = image_show(img_in.get_size(),(255,255,255))
+         img_white = image_create(img_in.get_size(),(255,255,255))
          img_border = addmul(img_in,img_white,1.0,-1.0)
-         show_image(display, img_border, True)
+         image_show(display, img_border, True)
 
 
 
 
       # b) edge detection in x direction
       #img_edge1 = edgedetect(img_in,1,(1,0))
-      #show_image(display, img_edge1, True)
+      #image_show(display, img_edge1, True)
 
       # c) edge detection in y direction
       #img_edge2 = edgedetect(img_in,1,(0,1))
-      #show_image(display, img_edge2, False)
+      #image_show(display, img_edge2, False)
 
       # d) blend x and y edge detection images
       #img_blend = blend(img_edge1, img_edge2)
-      #show_image(display, img_blend, False)
+      #image_show(display, img_blend, False)
 
       #image_save(img_blend,"border-"+sys.argv[1])
 
@@ -185,11 +185,11 @@ def main():
       img_blur = img_blend
       for i in range(0,3):
          img_blur = lazyblur(img_blur, 3)
-         show_image(display, img_blur, False)
+         image_show(display, img_blur, False)
 
       # f) unblured - blured edge image = better image for threshold usage (adapts to local variations)
       img_blurdif = addmul(img_blend, img_blur, -1)
-      show_image(display, img_blurdif, True)
+      image_show(display, img_blurdif, True)
 
 
 
@@ -210,7 +210,7 @@ def main():
                pygame.draw.line(img_edgepath, (255,0,0), [lastpoint[0]*rz,lastpoint[1]*rz], [point[0]*rz,point[1]*rz], 1)
                lastpoint = point
 
-      show_image(display, img_edgepath, True)
+      image_show(display, img_edgepath, True)
       image_save(img_edgepath,fn_comb(sys.argv[1],"epath"))
 
 
@@ -226,12 +226,12 @@ def main():
 
       # g) bolden edges
       img_bold = bolden(img_blurdif,1)
-      show_image(display, img_bold, True)
+      image_show(display, img_bold, True)
 
       # h) convert to black and white via limit
       img_bnw = blacknwhite(img_bold,12)  
-      show_image(display, img_bnw, True)
-      show_image(display, img_bnw, True)
+      image_show(display, img_bnw, True)
+      image_show(display, img_bnw, True)
 
 
       # i) isles smaller than limit get eliminated
@@ -263,7 +263,7 @@ def main():
             floodfill(img_bnw, position, (255,255,255))
          else:
             facecount+=1
-         show_image(display, img_bnw, False)
+         image_show(display, img_bnw, False)
 
       print "filled %i faces"%facecount
 
@@ -274,7 +274,7 @@ def main():
       for i in range(0,facecount):
          masks.append(bolden( mask(img_bnw,id_to_color(i)) ,2))
          masks_drawtmp = blend(masks_drawtmp, masks[i])
-         show_image(display, masks_drawtmp, False)
+         image_show(display, masks_drawtmp, False)
 
 
       # 4. get average brightness from this area
@@ -288,11 +288,11 @@ def main():
          avgcolor = get_avg_color(img_in, masks[i])
          avgcolors.append(avgcolor)
          print avgcolor
-         masked_originals.append(   multiply(  image_show(img_bnw.get_size(),avgcolor), masks[i])     )
+         masked_originals.append(   multiply(  image_create(img_bnw.get_size(),avgcolor), masks[i])     )
          #masked_originals.append(multiply(masks[i],img_in))
          masked_originals_drawtmp = blend(masked_originals_drawtmp, masked_originals[i])
 
-         show_image(display, masked_originals_drawtmp, False)
+         image_show(display, masked_originals_drawtmp, False)
 
       image_save(masked_originals_drawtmp,fn_comb(sys.argv[1],"tmp"))
 
@@ -344,7 +344,7 @@ def main():
                endpos = math.cos(ang*2*math.pi/360)*ofs+pos[0],math.sin(ang*2*math.pi/360)*ofs+pos[1]
                pygame.draw.line(motionvector_drawtmp, avgcolors[i], pos, endpos, 1)
 
-         show_image(display, motionvector_drawtmp, True)
+         image_show(display, motionvector_drawtmp, True)
       image_save(motionvector_drawtmp,fn_comb(sys.argv[1],"vector"))
 
 
@@ -353,7 +353,7 @@ def main():
          combv+=motionvectors
       #print combv
       motionvector_r = motionvector_rainbow(combv,img_bnw.get_size())
-      show_image(display, motionvector_r, True)
+      image_show(display, motionvector_r, True)
       image_save(motionvector_r,fn_comb(sys.argv[1],"vectom"))
 
      
@@ -378,7 +378,7 @@ def main():
                   lastpoint = point
          strokepathss.append(strokepaths)
 
-      show_image(display, img_strokepath, True)
+      image_show(display, img_strokepath, True)
       image_save(img_strokepath,fn_comb(sys.argv[1],"fpath"))
 
 
