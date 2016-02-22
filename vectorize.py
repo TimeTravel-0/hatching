@@ -111,7 +111,7 @@ def main():
       if len(sys.argv)>=3:
           bnw_mode = (sys.argv[2]=="bw")
 
-      img_in = load_image(input_file)
+      img_in = image_load(input_file)
       insize = img_in.get_size()
 
       maxdsize = [1024,600]
@@ -140,7 +140,7 @@ def main():
 
          motionvector_r = motionvector_rainbow(vectors,(500,500))
          show_image(display, motionvector_r, True)
-         save_image(motionvector_r,"vectom-test.png")
+         image_save(motionvector_r,"vectom-test.png")
 
 
       ###
@@ -161,10 +161,10 @@ def main():
          img_in, img_border = median(img_in,3,"c",3)
          show_image(display, img_in, True)
          show_image(display, img_border, True)
-         save_image(img_border,fn_comb(sys.argv[1],"bordem"))
+         image_save(img_border,fn_comb(sys.argv[1],"bordem"))
       else:
          # just create inverted image...
-         img_white = gen_single_color(img_in.get_size(),(255,255,255))
+         img_white = image_show(img_in.get_size(),(255,255,255))
          img_border = addmul(img_in,img_white,1.0,-1.0)
          show_image(display, img_border, True)
 
@@ -183,7 +183,7 @@ def main():
       #img_blend = blend(img_edge1, img_edge2)
       #show_image(display, img_blend, False)
 
-      #save_image(img_blend,"border-"+sys.argv[1])
+      #image_save(img_blend,"border-"+sys.argv[1])
 
       img_blend = img_border 
 
@@ -217,12 +217,12 @@ def main():
                lastpoint = point
 
       show_image(display, img_edgepath, True)
-      save_image(img_edgepath,fn_comb(sys.argv[1],"epath"))
+      image_save(img_edgepath,fn_comb(sys.argv[1],"epath"))
 
 
 
       c = hpgl_usepen(1,(0,0,0))
-      c+= hpgl_frompaths(img_edgepath)
+      c+= hpgl_frompaths(edgepaths)
       hpgl_tofile(c, fn_comb(sys.argv[1],"epath","hpgl"))
 
       # print edge paths 
@@ -294,13 +294,13 @@ def main():
          avgcolor = get_avg_color(img_in, masks[i])
          avgcolors.append(avgcolor)
          print avgcolor
-         masked_originals.append(   multiply(  gen_single_color(img_bnw.get_size(),avgcolor), masks[i])     )
+         masked_originals.append(   multiply(  image_show(img_bnw.get_size(),avgcolor), masks[i])     )
          #masked_originals.append(multiply(masks[i],img_in))
          masked_originals_drawtmp = blend(masked_originals_drawtmp, masked_originals[i])
 
          show_image(display, masked_originals_drawtmp, False)
 
-      save_image(masked_originals_drawtmp,fn_comb(sys.argv[1],"tmp"))
+      image_save(masked_originals_drawtmp,fn_comb(sys.argv[1],"tmp"))
 
 
       # 5. motion vector find
@@ -351,7 +351,7 @@ def main():
                pygame.draw.line(motionvector_drawtmp, avgcolors[i], pos, endpos, 1)
 
          show_image(display, motionvector_drawtmp, True)
-      save_image(motionvector_drawtmp,fn_comb(sys.argv[1],"vector"))
+      image_save(motionvector_drawtmp,fn_comb(sys.argv[1],"vector"))
 
 
       combv = []
@@ -360,7 +360,7 @@ def main():
       #print combv
       motionvector_r = motionvector_rainbow(combv,img_bnw.get_size())
       show_image(display, motionvector_r, True)
-      save_image(motionvector_r,fn_comb(sys.argv[1],"vectom"))
+      image_save(motionvector_r,fn_comb(sys.argv[1],"vectom"))
 
      
 
@@ -385,7 +385,7 @@ def main():
          strokepathss.append(strokepaths)
 
       show_image(display, img_strokepath, True)
-      save_image(img_strokepath,fn_comb(sys.argv[1],"fpath"))
+      image_save(img_strokepath,fn_comb(sys.argv[1],"fpath"))
 
 
       # todo.

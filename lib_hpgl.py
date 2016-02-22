@@ -3,7 +3,7 @@
 
 def hpgl_cmd(c,point=[]):
    '''create an command from txt and point'''
-   if isinstance(point,list):
+   if isinstance(point, tuple) or isinstance(point, list):
       npoint = [str(x) for x in point]
       return [c+",".join(npoint)+";"]
    else:
