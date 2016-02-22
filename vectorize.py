@@ -29,17 +29,11 @@
 import sys
 
 from lib_console import *
-
-from lib_gui_eyecandy import *
 from lib_imagefile import *
 from lib_colors import *
 from lib_image_filters import *
 from lib_paths import *
 from lib_motionvectors import *
-
-
-
-
 from lib_hpgl import *
 
 
