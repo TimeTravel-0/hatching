@@ -87,7 +87,7 @@ def facewalk(img_in, mask, motionvectors):
                   
 
 
-def main():
+def main(input_file,mode=""):
    '''main routine'''
    if len(sys.argv)>=2: # 1 parameters
 
@@ -98,47 +98,9 @@ def main():
       # the idea is as follows:
       # 1. find/mark edges, because edges mark areas
 
-      input_file = sys.argv[1]
-
-
-      bnw_mode = False
-      if len(sys.argv)>=3:
-          bnw_mode = (sys.argv[2]=="bw")
 
       img_in = image_load(input_file)
-      insize = img_in.get_size()
-
-      maxdsize = [1024,600]
-
-      dsize = [insize[0]*4,insize[1]*4]
-      inratio = float(insize[1])/float(insize[0])
-      if dsize[0]>maxdsize[0]:
-         dsize[0]=maxdsize[0]
-         dsize[1]=int(dsize[0]*inratio)
-      if dsize[1]>maxdsize[1]:
-         dsize[1]=maxdsize[1]
-         dsize[0]=int(dsize[1]/inratio)
- 
-      
-      display = pygame.display.set_mode(dsize)
-
-
-      ### motion vector rainbow test
-      if False:
-         vectors = []
-         for y in range(0,500,50):
-             for x in range(0,500,50):
-                 vec = [[x,y],math.atan2(x-250,y-250)*360/math.pi,0,0,0,1]
-                 #vec = [[x,y],random.random()*360,0,0,0,1]
-                 vectors.append(vec)
-
-         motionvector_r = motionvector_rainbow(vectors,(500,500))
-         image_show(display, motionvector_r, True)
-         image_save(motionvector_r,"vectom-test.png")
-
-
-      ###
-
+      display = image_gui(img_in.get_size())
 
       image_show(display, img_in, False)
 
@@ -151,11 +113,12 @@ def main():
       # as the median filter already gets a list of all pixels around the analyzed coordinate
       # it got an additional part to calculate the contrast.
 
-      if bnw_mode == False:
-         img_in, img_border = median(img_in,3,"c",3)
-         image_show(display, img_in, True)
+      if mode != "bw":
+         img_median, img_border = median(img_in,3,"c",3)
+         image_show(display, img_median, True)
          image_show(display, img_border, True)
-         image_save(img_border,fn_comb(sys.argv[1],"bordem"))
+         image_save(img_border,fn_comb(input_file,"borderm"))
+         image_save(img_median,fn_comb(input_file,"median"))
       else:
          # just create inverted image...
          img_white = image_create(img_in.get_size(),(255,255,255))
@@ -164,21 +127,7 @@ def main():
 
 
 
-
-      # b) edge detection in x direction
-      #img_edge1 = edgedetect(img_in,1,(1,0))
-      #image_show(display, img_edge1, True)
-
-      # c) edge detection in y direction
-      #img_edge2 = edgedetect(img_in,1,(0,1))
-      #image_show(display, img_edge2, False)
-
-      # d) blend x and y edge detection images
-      #img_blend = blend(img_edge1, img_edge2)
-      #image_show(display, img_blend, False)
-
-      #image_save(img_blend,"border-"+sys.argv[1])
-
+      img_in = img_median
       img_blend = img_border 
 
       # e) create blured image (average of local area)
@@ -197,30 +146,15 @@ def main():
       # j) walk the line
 
       edgepaths = edgewalk(img_blurdif)
-      rz=4
-      rendersize = [img_in.get_size()[0]*rz,img_in.get_size()[1]*rz]
-      img_edgepath = pygame.Surface(rendersize)
-      for polygon in edgepaths:
-         lastpoint = False
-         if len(polygon)>1:
-            for point in polygon:
-               if not lastpoint:
-                  lastpoint = point
-               pygame.draw.circle(img_edgepath, (0,128,0),[point[0]*rz,point[1]*rz], 5)
-               pygame.draw.line(img_edgepath, (255,0,0), [lastpoint[0]*rz,lastpoint[1]*rz], [point[0]*rz,point[1]*rz], 1)
-               lastpoint = point
+      img_edgepath = image_render_paths(edgepaths,img_in.get_size())
 
       image_show(display, img_edgepath, True)
       image_save(img_edgepath,fn_comb(sys.argv[1],"epath"))
 
 
-
       c = hpgl_usepen(1,(0,0,0))
       c+= hpgl_frompaths(edgepaths)
       hpgl_tofile(c, fn_comb(sys.argv[1],"epath","hpgl"))
-
-      # print edge paths 
-
 
 
 
@@ -243,6 +177,8 @@ def main():
          if pixelcount < 100:
             print "isle at %s, %i pixels below limit"%(str(position), pixelcount)
             floodfill(img_bnw, position, (0,0,0)) # eliminate it
+
+
 
       img_bnw = blacknwhite(img_bnw,4)
 
@@ -338,10 +274,10 @@ def main():
             ofs=ofs*(1-rel_cor) * rel_corvar
             vector.append(ofs)
 
-            ofs+=5
+#            ofs+=1
 
             if ofs>0:
-               endpos = math.cos(ang*2*math.pi/360)*ofs+pos[0],math.sin(ang*2*math.pi/360)*ofs+pos[1]
+               endpos = 10*math.cos(ang*2*math.pi/360)*ofs+pos[0],10*math.sin(ang*2*math.pi/360)*ofs+pos[1]
                pygame.draw.line(motionvector_drawtmp, avgcolors[i], pos, endpos, 1)
 
          image_show(display, motionvector_drawtmp, True)
@@ -361,6 +297,8 @@ def main():
 
       # 6. generate strokes/hatching for each area. it is not necessary to know the area outline as polygon, just check the individual pixels
 
+
+      # buggy!
 
       img_strokepath = pygame.Surface(img_in.get_size())
       strokepathss = []
@@ -382,18 +320,15 @@ def main():
       image_save(img_strokepath,fn_comb(sys.argv[1],"fpath"))
 
 
-      # todo.
 
-      # 7. generate strokes for borders.
 
-      # see 1 j)
 
-      # 8. push polygons to HPGL
 
-      # todo
 
       pygame.display.flip()
       time.sleep(10)
+
+
 
 if __name__ == "__main__":
    import pygame
@@ -401,4 +336,7 @@ if __name__ == "__main__":
    import time
    import math
    import random
-   main()
+   if len(sys.argv) == 2:
+       main(sys.argv[1])
+   if len(sys.argv) == 3:
+       main(sys.argv[1],sys.argv[2])
