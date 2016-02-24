@@ -119,6 +119,8 @@ def main(input_file,mode=""):
          image_show(display, img_border, True)
          image_save(img_border,fn_comb(input_file,"borderm"))
          image_save(img_median,fn_comb(input_file,"median"))
+
+         img_in = img_median
       else:
          # just create inverted image...
          img_white = image_create(img_in.get_size(),(255,255,255))
@@ -127,7 +129,7 @@ def main(input_file,mode=""):
 
 
 
-      img_in = img_median
+      #img_in = img_median
       img_blend = img_border 
 
       # e) create blured image (average of local area)
@@ -242,7 +244,6 @@ def main(input_file,mode=""):
          print "motion vector face %i"%i
          motionvectors = motionsfind(img_in, bolden(masks[i],5),10) # 10px radius
          motionvectorss.append(motionvectors)
-
 
 
 

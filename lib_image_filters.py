@@ -2,6 +2,8 @@
 
 from lib_console import *
 from lib_colors import *
+from lib_imagefile import *
+
 import math
 import pygame
 
@@ -475,4 +477,12 @@ def find_brightest_pixel_with_spiral(img_in,startpos,maxlen,startang):
    return maxpos, maxbr
 
          
-
+def image_filter_zoomgrid(img_in,zoom=10,spacing=1):
+   new_img = image_create((img_in.get_width()*zoom,img_in.get_height()*zoom),(128,0,128))
+   for y in range(0,img_in.get_height()):
+      for x in range(0,img_in.get_width()):
+         in_col = img_in.get_at((x,y))
+         for yy in range(0,zoom-spacing):
+            for xx in range(0,zoom-spacing):
+               new_img.set_at((x*zoom+xx,y*zoom+yy),in_col)
+   return new_img
