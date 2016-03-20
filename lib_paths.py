@@ -164,7 +164,96 @@ def edgewalk(img):
    print "optimized to %i paths"%len(paths)
 
    return paths
+   
+def render_vector(img,pos,angle,length):
+    '''draw a nice arrow in image at position with angle'''
+    color=(255,0,0)
+    angle=angle/360.0*2*math.pi
+    dy = math.sin(angle)*length
+    dx = math.cos(angle)*length
+    endpos=[pos[0]+dx,pos[1]+dy]
+    
+    peak1pos = [endpos[0]-math.cos(angle+0.3)*10,endpos[1]-math.sin(angle+0.3)*10]
+    peak2pos = [endpos[0]-math.cos(angle-0.3)*10,endpos[1]-math.sin(angle-0.3)*10]
 
+    img_clone = pygame.Surface(img.get_size())
+    img_clone.blit(img,(0,0))    
+    
+    pygame.draw.line(img_clone,color,pos,endpos,2)
+    pygame.draw.line(img_clone,color,peak1pos,endpos,2)
+    pygame.draw.line(img_clone,color,peak2pos,endpos,2)
+    
+    
+    return img_clone
+
+def edgewalk_visualize(img, display, radius=3):
+   '''in image showing edges, walks along the edge and creates a polygon path'''
+
+   img_clone = pygame.Surface(img.get_size())
+   img_clone.blit(img,(0,0))
+
+
+   paths = []
+
+   #radius = 3
+
+   brightness_min = 5
+   
+   render_cnt = 0
+
+   while True:
+      position, br = find_brightest_pixel(img_clone)
+      print position, br
+      if not position or br < brightness_min:
+         break
+      path = []
+      path.append(position)
+      # position is the first pixel we started at.
+      img_clone.set_at(position,(0,0,0)) # deactivate pixel
+      # now, in a spiralish way, find next pixel
+      angle2 = 0
+      while True:
+         position, br, a = find_brightest_pixel_with_spiral(img_clone,position,radius+3,angle2-180)
+         if not position or br < brightness_min:
+            break
+         #lastdistance = math.pow(math.pow(position[0]-path[-1][0],2) + math.pow(position[1]-path[-1][1],2),0.5)
+         #lastangle = 360
+         if len(path)>1:
+         #   angle1 = math.atan2(position[1]-path[-1][1],position[0]-path[-1][0])
+             #angle2 = math.atan2(path[-1][1]-path[-2][1],path[-1][0]-path[-2][0])*180.0/math.pi # !!!
+             angle2 = a
+         #   lastangle = abs(angle1-angle2)*float(360)/(2*math.pi)
+            
+         
+         #if float(lastdistance)*lastangle > 1:
+         if True:
+            path.append(position)
+         pygame.draw.circle(img_clone, (0,0,0), position, radius, 0)
+         
+         image_show(display,img_clone,True,(2,1))
+         xpaths = paths+[path]
+         #pathr1 = image_render_paths(paths,img_clone.get_size(),1,(0,64,0),(128,0,0))
+         #pathr2 = image_render_paths([path],img_clone.get_size(),1,(0,128,0),(255,0,0))
+         #pathr = blend(pathr1,pathr2)
+         #image_show(display,pathr,True,(2,1))
+         #image_show(display,image_render_paths(xpaths,img_clone.get_size(),1,(0,64,0),(128,0,0)),True,(2,1))
+         image_show(display,render_vector(image_render_paths(xpaths,img_clone.get_size(),1,(0,64,0),(128,0,0)),position,angle2,20),True,(2,1))
+         image_save(display,"render/linefollow-%09i.jpg"%render_cnt)
+         render_cnt+=1
+
+      if len(path)>2:
+         paths.append(path)
+
+
+
+   print "found %i paths"%len(paths)
+
+   #paths = pathcombiner(paths)
+   #paths = optimizepaths(paths)
+
+   print "optimized to %i paths"%len(paths)
+
+   return paths
 
 
 if __name__ == "__main__": # test

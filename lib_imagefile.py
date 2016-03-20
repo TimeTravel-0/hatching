@@ -49,8 +49,12 @@ def image_show(display, img, reloc=True, dims=(3,3)):
    pygame.display.flip()
 
 
-def image_gui(insize):
-   maxdsize = [1024,600]
+def image_gui(insize,maxdsize=[1024,600]):
+   #maxdsize = [1024,600]
+   #maxdsize =
+   
+   if not maxdsize:
+       maxdsize=insize
 
    dsize = [insize[0]*4,insize[1]*4]
    inratio = float(insize[1])/float(insize[0])
@@ -64,7 +68,7 @@ def image_gui(insize):
 
    return pygame.display.set_mode(dsize)
 
-def image_render_paths(paths,boundaries,zoom=4):
+def image_render_paths(paths,boundaries,zoom=4,color1=(128,0,0),color2=(0,255,0)):
    rz=zoom
    rendersize = [boundaries[0]*rz,boundaries[1]*rz]
    img_path = image_create(rendersize,(0,0,0))
@@ -74,8 +78,8 @@ def image_render_paths(paths,boundaries,zoom=4):
          for point in polygon:
             if not lastpoint:
                lastpoint = point
-            pygame.draw.circle(img_path, (128,0,0),[point[0]*rz,point[1]*rz], 3)
-            pygame.draw.line(img_path, (0,255,0), [lastpoint[0]*rz,lastpoint[1]*rz], [point[0]*rz,point[1]*rz], 1)
+            pygame.draw.circle(img_path, color1,[point[0]*rz,point[1]*rz], 3)
+            pygame.draw.line(img_path, color2, [lastpoint[0]*rz,lastpoint[1]*rz], [point[0]*rz,point[1]*rz], 1)
             lastpoint = point
    return img_path
    

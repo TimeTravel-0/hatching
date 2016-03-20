@@ -462,6 +462,7 @@ def find_brightest_pixel_with_spiral(img_in,startpos,maxlen,startang):
 
    maxbr = 0
    maxpos = False
+   maxang = startang
 
    for r in range(1,maxlen):
       for a in range(0+int(startang),360+int(startang)):
@@ -474,7 +475,8 @@ def find_brightest_pixel_with_spiral(img_in,startpos,maxlen,startang):
                if brightness > maxbr:
                   maxbr = brightness
                   maxpos = probepos
-   return maxpos, maxbr
+                  maxang = a
+   return maxpos, maxbr, maxang
 
          
 def image_filter_zoomgrid(img_in,zoom=10,spacing=1):
