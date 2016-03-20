@@ -44,21 +44,29 @@ class virtualpen:
     
     
         if self.zpos<self.ztarget:
-            self.zacc+=0.45
+            self.zacc+=0.1
+            #self.zacc+=0.001            
         if self.zpos>self.ztarget:
-            self.zacc-=0.1
+            self.zacc-=0.05
+            #self.zacc-=0.005
             
         self.zpos+=self.zacc
         
-        if self.zpos<0:
-            self.zpos=0.0
-            self.zacc=math.fabs(self.zacc)*0.5
+        if self.zpos<-0.5:
+            self.zpos=0.5
+            self.zacc=math.fabs(self.zacc)*0.3
+            
+        if self.zpos<0.0:
+            self.zpos*=0.5
+            self.zacc*=0.5
+        #    self.zpos-=0.05
 
         if self.zpos>1:
             self.zpos=1.0
-        #    self.zacc=-math.fabs(self.zacc)
+            self.zacc=-math.fabs(self.zacc)*0.5
             
-        #self.zacc+=0.99
+        self.zacc*=0.95
+        
         
         
     def up(self):
@@ -66,7 +74,7 @@ class virtualpen:
         return
         
     def down(self):
-        self.ztarget=0.0
+        self.ztarget=-0.5
         return
     
     def goto(self,pos):
@@ -113,8 +121,8 @@ class virtualpen:
         
     def draw(self,pos,w=10):
         x,y = int(pos[0]),int(pos[1])
-        dmax= int(self.thickness/2) #5
-        if self.zpos<0.2:
+        dmax= int((self.thickness/2)*(1-self.zpos))+2 #5
+        if self.zpos<0.5:
             #pygame.draw.circle(self.surface, (255-(255/float(w)),0,0), (x,y), int(self.zpos*10+2))
             
             for xx in range(x-dmax,x+dmax):
@@ -124,15 +132,18 @@ class virtualpen:
         return
         
     def draw_pixel(self,cpos,pos,dmax):
+        fadeout_pixel = 3
         x,y = pos
         if x<0 or y<0 or x>self.surface.get_width()-1 or y>self.surface.get_height()-1:
             return
             
-        dist = math.pow( math.pow(cpos[0]-pos[0],2) + math.pow(cpos[1]-pos[1],2) ,0.5)/float(dmax)
+        dist_abs = math.pow( math.pow(cpos[0]-pos[0],2) + math.pow(cpos[1]-pos[1],2) ,0.5)
+        
+        dist_rel = dist_abs/float(dmax)
     
         c = self.surface.get_at(pos)
         
-        mix = 1-dist
+        mix = (1.0/float(fadeout_pixel))*(float(dmax)-dist_abs) #+ (1-dist*dist)
         if mix>1:
             mix=1
         if mix<0:
@@ -141,6 +152,8 @@ class virtualpen:
         col = self.color
         
         c= (col[0]*mix + c[0]*(1-mix),col[1]*mix + c[1]*(1-mix),col[2]*mix + c[2]*(1-mix)) 
+        
+        
         
         self.surface.set_at(pos,c)
 
