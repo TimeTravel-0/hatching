@@ -488,3 +488,32 @@ def image_filter_zoomgrid(img_in,zoom=10,spacing=1):
             for xx in range(0,zoom-spacing):
                new_img.set_at((x*zoom+xx,y*zoom+yy),in_col)
    return new_img
+
+
+def image_gausscircle(img_in,position=[0,0],radius=10.0,color=[0,0,0],intensity=0.5): # works on input image!
+   for x in range(position[0]-radius,position[0]+radius):
+      for y in range(position[1]-radius,position[1]+radius):
+         if x<0 or x>img_in.get_width():
+            break
+         if y<0 or y>img_in.get_height():
+            break
+        
+         in_col = img_in.get_at((x,y))
+         
+         distance_from_center = ( (x-position[0])**2 + (y-position[1])**2 )**0.5
+         distance_from_center_relative = distanc_from_center / radius
+         
+         if distance_from_center_relative > 1.0:
+            break
+         inverse_distance_from_center_relative = 1.0 - distance_from_center_relative
+               
+         new_col = color
+         
+         mix_ratio_new = ( 1.0 * inverse_distance_from_center_relative**2 ) * intensity
+         mix_ratio_old = 1.0 - mix_ratio_new
+         
+         out_col = [ in_col[0]*mix_ratio_old + new_col[0]*mix_ratio_new, in_col[1]*mix_ratio_old + new_col[1]*mix_ratio_new, in_col[2]*mix_ratio_old + new_col[2]*mix_ratio_new ] 
+         
+         img_in.set_at((x,y),out_col)
+   return img_in
+         
