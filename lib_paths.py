@@ -254,7 +254,69 @@ def edgewalk_visualize(img, display, radius=3):
    print "optimized to %i paths"%len(paths)
 
    return paths
+   
+   
+import random
+   
+def scribble_visualize(img, display, radius=3):
+   '''in greyscale image, draw over bright areas until everything is painted over'''
 
+   img_clone = pygame.Surface(img.get_size())
+   img_clone.blit(img,(0,0))
+
+   paths = []
+
+   #radius = 3.0
+   
+   darken_radius = radius*1.5
+   darken_amount = 0.5
+
+   brightness_min = 5
+   render_cnt = 0
+   
+   while True:
+      position, br = find_brightest_pixel_random(img_clone)
+      print position, br
+      if not position or br < brightness_min:
+         break   
+      path = []
+      path.append(position)
+      # position is the first pixel we started at.
+      #img_clone.set_at(position,(0,0,0)) # deactivate pixel
+      image_fadecircle(img_clone,position,darken_radius,[0,0,0],darken_amount) # deactivate pixel, new generation TM
+      
+      while True:
+         # "look in a random direction and pick the brightest pixel"
+         random_angle=random.random()*360-180
+         position, br, a = find_brightest_pixel_with_cirlce_random(img_clone,position,radius,random_angle)
+         if not position or br < brightness_min:
+            break
+
+         path.append(position)
+         
+         #pygame.draw.circle(img_clone, (0,0,0), position, radius, 0)
+         image_fadecircle(img_clone,position,darken_radius,[0,0,0],darken_amount) # deactivate pixel, new generation TM
+         
+         image_show(display,img_clone,True,(2,1))
+         xpaths = paths+[path]
+         image_show(display,render_vector(image_render_paths(xpaths,img_clone.get_size(),1,(0,64,0),(128,0,0)),position,random_angle,20),True,(2,1))
+         
+         image_save(display,"render/scribble-%09i.jpg"%render_cnt)
+         render_cnt+=1
+
+      if len(path)>2:
+         paths.append(path)
+
+
+
+   print "found %i paths"%len(paths)
+
+   #paths = pathcombiner(paths)
+   #paths = optimizepaths(paths)
+
+   print "optimized to %i paths"%len(paths)
+
+   return paths
 
 if __name__ == "__main__": # test
    print "Testing optimizepaths"

@@ -78,8 +78,8 @@ def image_render_paths(paths,boundaries,zoom=4,color1=(128,0,0),color2=(0,255,0)
          for point in polygon:
             if not lastpoint:
                lastpoint = point
-            pygame.draw.circle(img_path, color1,[point[0]*rz,point[1]*rz], 3)
-            pygame.draw.line(img_path, color2, [lastpoint[0]*rz,lastpoint[1]*rz], [point[0]*rz,point[1]*rz], 1)
+            pygame.draw.circle(img_path, color1,[int(point[0]*rz),int(point[1]*rz) ], 3)
+            pygame.draw.line(img_path, color2, [int(lastpoint[0]*rz),int(lastpoint[1]*rz)], [int(point[0]*rz),int(point[1]*rz)], 1)
             lastpoint = point
    return img_path
    

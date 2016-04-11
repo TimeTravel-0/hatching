@@ -454,6 +454,61 @@ def find_brightest_pixel(img_in):
             maxbr = brightness
             maxpos = (x,y)
    return maxpos, maxbr
+   
+import random
+def find_brightest_pixel_random(img_in):
+   '''returns the coordinate of brightest pixel found'''
+
+   maxbr = 0
+   maxpos = False
+   
+   brightest_coordinates = []
+
+   width,height = img_in.get_size()
+   for y in range(0,height):
+      for x in range(0,width):
+         color_in = img_in.get_at((x,y))
+         brightness = sum(color_in[:2])/3
+         if brightness > maxbr:
+             brightest_coordinates = []
+         if brightness >= maxbr:
+            maxbr = brightness
+            maxpos = (x+0.5,y+0.5)
+            brightest_coordinates.append([maxpos,maxbr])
+   # now pick a random one from the list
+   idx = int( random.random()*len(brightest_coordinates) )
+   return brightest_coordinates[idx]
+   #return maxpos, maxbr
+   
+def find_brightest_pixel_with_cirlce_random(img_in,startpos,r,startang):
+   width,height = img_in.get_size()
+
+   maxbr = 0
+   maxpos = False
+   maxang = startang
+   
+   
+   brightest = []
+
+   for a in range(0+int(startang),360+int(startang)):
+      probepos = [int(startpos[0] + math.cos(a*2*math.pi/360)*r),int(startpos[1] + math.sin(a*2*math.pi/360)*r) ]
+      x,y = probepos
+      if x>=0 and y>=0 and x<width and y<height:
+            color = img_in.get_at((x,y))
+
+            brightness = sum(color[:2])/3
+            if brightness > maxbr:
+                brightest = []
+            if brightness >= maxbr:
+               maxbr = brightness
+               maxpos = probepos
+               maxang = a
+               brightest.append([maxpos,maxbr,maxang])
+   # now pick a random one from the list
+   idx = int( random.random()*len(brightest) )
+   return brightest[idx]
+   #return maxpos, maxbr, maxang
+
 
 
 def find_brightest_pixel_with_spiral(img_in,startpos,maxlen,startang):
@@ -490,21 +545,21 @@ def image_filter_zoomgrid(img_in,zoom=10,spacing=1):
    return new_img
 
 
-def image_gausscircle(img_in,position=[0,0],radius=10.0,color=[0,0,0],intensity=0.5): # works on input image!
-   for x in range(position[0]-radius,position[0]+radius):
-      for y in range(position[1]-radius,position[1]+radius):
-         if x<0 or x>img_in.get_width():
-            break
-         if y<0 or y>img_in.get_height():
-            break
+def image_fadecircle(img_in,position=[0,0],radius=10.0,color=[0,0,0],intensity=0.5): # works on input image!
+   for x in range(int(position[0]-radius-0.5),int(position[0]+radius+0.5)):
+      for y in range(int(position[1]-radius-0.5),int(position[1]+radius+0.5)):
+         if x<0 or x>=img_in.get_width():
+            continue
+         if y<0 or y>=img_in.get_height():
+            continue
         
          in_col = img_in.get_at((x,y))
          
          distance_from_center = ( (x-position[0])**2 + (y-position[1])**2 )**0.5
-         distance_from_center_relative = distanc_from_center / radius
+         distance_from_center_relative = distance_from_center / radius
          
          if distance_from_center_relative > 1.0:
-            break
+            continue
          inverse_distance_from_center_relative = 1.0 - distance_from_center_relative
                
          new_col = color
