@@ -2,6 +2,7 @@
 
 import pygame
 from lib_image_filters import *
+from lib_paths import *
 import random
 
 
@@ -44,9 +45,9 @@ def motionfind(img_in,mask,pos,radius):
    min_ang = 0
    min_ofs = 0
 
-   for shift in range(2,radius,radius/3): # shift 2 to 20 in 2 steps
+   for shift in range(2,radius*2,radius/3): # shift 2 to 20 in 2 steps
       startang = int(random.random()*360)
-      for angle in range(0+startang,360+startang,10): # 10 degree steps to probe, start with random one
+      for angle in range(0+startang,360+startang,5): # 10 degree steps to probe, start with random one
          cor = motionprobe(img_in,mask,pos,radius,angle,shift)
          print "probing shift %i  angle %i correlation %i position %s  \r"%(shift,angle,cor,str(pos)),
 
@@ -84,15 +85,42 @@ def motionsfind(img_in, mask, radius):
       #
   
    return found_points
+   
+def motionsfind_visualize(img_in, mask, radius, display):
+   '''finds points with distance "radius" within the mask and gets motion vectors for each'''
+
+   # point must be in mask and "radius" away from other points
+   found_points = []
+
+   mask_clone = pygame.Surface(mask.get_size())
+   mask_clone.blit(mask,(0,0))
+
+
+
+   while True:
+      position = find_pixel_with_color(mask_clone,(255,255,255))
+      if not position:
+         break
+      ang,ofs,cor,corvar = motionfind(img_in, mask, position, radius)
+      found_points.append([position,ang,ofs,cor,corvar])
+      #print position, ang, ofs
+      pygame.draw.circle(mask_clone, (0,0,0), position, radius, 0)
+      
+      if cor>0.1:
+          image_show(display,render_vector(display, [position[0]*2,position[1]*2], ang, cor*0.2), False, (1,1))  
+          image_show(display,render_vector(display, [position[0]*2,position[1]*2], ang+180, cor*0.2), False, (1,1)) 
+  
+   return found_points
+    
 
 def anglecombiner(a1,a2):
 
-
+   
    a1=a1%180
    a2=a2%180
 
-   if abs(a1-a2)>180:
-      a2-=180
+   #if abs(a1-a2)>180:
+   #   a2-=180
 
    
    return a1,a2
@@ -105,7 +133,7 @@ def interpolate_motionvectors(motionvectors, position):
 
    mindist = False
    minvec = False
-   for v in motionvectors:
+   for v in motionvectors: # sort by distance and take 3 closest values
       x,y = v[0]
       distance = math.pow(math.pow(position[0]-x,2) + math.pow(position[1]-y,2),0.5)
       dvpairs.append([distance, v])
@@ -130,6 +158,7 @@ def interpolate_motionvectors(motionvectors, position):
       d3 = 9999
    else:
       d3 = 1/sortedpairs[2][0]
+
    ang1 = sortedpairs[0][1][1]
    ang2 = sortedpairs[1][1][1]
    ang3 = sortedpairs[2][1][1]
@@ -145,6 +174,8 @@ def interpolate_motionvectors(motionvectors, position):
    avg_ang = (ang1*d1+ang2*d2+ang3*d3)/(d1+d2+d3)
 
    avg_rel = (rel1*d1+rel2*d2+rel3*d3)/(d1+d2+d3)
+   
+   #return [ang1,rel1]
    
 
    return [avg_ang, avg_rel]

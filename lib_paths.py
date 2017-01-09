@@ -135,15 +135,14 @@ def edgewalk(img):
       # now, in a spiralish way, find next pixel
       angle2 = 0
       while True:
-         position, br = find_brightest_pixel_with_spiral(img_clone,position,radius+3,angle2)
+         position, br, a = find_brightest_pixel_with_spiral(img_clone,position,radius+3,angle2)
          if not position or br < brightness_min:
             break
-         #lastdistance = math.pow(math.pow(position[0]-path[-1][0],2) + math.pow(position[1]-path[-1][1],2),0.5)
-         #lastangle = 360
-         #if len(path)>1:
+         
+         if len(path)>1:
          #   angle1 = math.atan2(position[1]-path[-1][1],position[0]-path[-1][0])
-            angle2 = math.atan2(path[-1][1]-path[-2][1],path[-1][0]-path[-2][0])
-         #   lastangle = abs(angle1-angle2)*float(360)/(2*math.pi)
+             #angle2 = math.atan2(path[-1][1]-path[-2][1],path[-1][0]-path[-2][0])*180.0/math.pi # !!!
+             angle2 = a
             
          
          #if float(lastdistance)*lastangle > 1:
@@ -173,18 +172,38 @@ def render_vector(img,pos,angle,length):
     dx = math.cos(angle)*length
     endpos=[pos[0]+dx,pos[1]+dy]
     
-    peak1pos = [endpos[0]-math.cos(angle+0.3)*10,endpos[1]-math.sin(angle+0.3)*10]
-    peak2pos = [endpos[0]-math.cos(angle-0.3)*10,endpos[1]-math.sin(angle-0.3)*10]
+    headlen=length*0.3
+    width=1
+    
+    peak1pos = [endpos[0]-math.cos(angle+0.3)*headlen,endpos[1]-math.sin(angle+0.3)*headlen]
+    peak2pos = [endpos[0]-math.cos(angle-0.3)*headlen,endpos[1]-math.sin(angle-0.3)*headlen]
 
     img_clone = pygame.Surface(img.get_size())
     img_clone.blit(img,(0,0))    
     
-    pygame.draw.line(img_clone,color,pos,endpos,2)
-    pygame.draw.line(img_clone,color,peak1pos,endpos,2)
-    pygame.draw.line(img_clone,color,peak2pos,endpos,2)
+    pygame.draw.line(img_clone,color,pos,endpos,width)
+    pygame.draw.line(img_clone,color,peak1pos,endpos,width)
+    pygame.draw.line(img_clone,color,peak2pos,endpos,width)
     
     
     return img_clone
+    
+def render_vector_path(pos,angle,length):
+    angle=angle/360.0*2*math.pi
+    dy = math.sin(angle)*length
+    dx = math.cos(angle)*length
+    endpos=[pos[0]+dx,pos[1]+dy]
+    
+    headlen=length*0.3
+    width=1
+    
+    peak1pos = [endpos[0]-math.cos(angle+0.3)*headlen,endpos[1]-math.sin(angle+0.3)*headlen]
+    peak2pos = [endpos[0]-math.cos(angle-0.3)*headlen,endpos[1]-math.sin(angle-0.3)*headlen]
+
+    if length>0:
+        return [[pos,endpos],[peak1pos,endpos,peak2pos]]
+    return []
+    
 
 def edgewalk_visualize(img, display, radius=3):
    '''in image showing edges, walks along the edge and creates a polygon path'''
@@ -258,7 +277,7 @@ def edgewalk_visualize(img, display, radius=3):
    
 import random
    
-def scribble_visualize(img, display, radius=3):
+def scribble_visualize(img, display, radius=3, brightness_min=5,mode="log"):
    '''in greyscale image, draw over bright areas until everything is painted over'''
 
    img_clone = pygame.Surface(img.get_size())
@@ -269,21 +288,46 @@ def scribble_visualize(img, display, radius=3):
    #radius = 3.0
    
    darken_radius = radius*1.5
-   darken_amount = 0.5
+   
+   
+   #darken_amount = 0.5
+   darken_amount = 0.7
+   
+   if mode =="lin":
+      darken_amount = 0.4
+   
+   scribble_maxlen = 100
 
-   brightness_min = 5
+   #brightness_min = 5
    render_cnt = 0
    
+   lastpos = (-1,-1)
+   position = (0,0)
+   pos_z=(-1,-1)
+   
+   failcount = 0
+   
+   
    while True:
+      lastpos = pos_z
       position, br = find_brightest_pixel_random(img_clone)
+      pos_z=position
       print position, br
       if not position or br < brightness_min:
          break   
+      if int(lastpos[0]) == int(position[0]) and int(lastpos[1]) == int(position[1]):
+          print lastpos, position
+          failcount+=1
+          if failcount>100:
+             break
       path = []
       path.append(position)
       # position is the first pixel we started at.
       #img_clone.set_at(position,(0,0,0)) # deactivate pixel
-      image_fadecircle(img_clone,position,darken_radius,[0,0,0],darken_amount) # deactivate pixel, new generation TM
+      #if mode =="log":
+      #   image_fadecircle(img_clone,position,darken_radius,[0,0,0],darken_amount) # deactivate pixel, new generation TM
+      #if mode =="lin":
+      #   image_fadecircle_subtract(img_clone,position,darken_radius,[0,0,0],darken_amount)
       
       while True:
          # "look in a random direction and pick the brightest pixel"
@@ -291,21 +335,29 @@ def scribble_visualize(img, display, radius=3):
          position, br, a = find_brightest_pixel_with_cirlce_random(img_clone,position,radius,random_angle)
          if not position or br < brightness_min:
             break
+         if len(path)>scribble_maxlen:
+            break
 
          path.append(position)
-         
+         failcount=0
          #pygame.draw.circle(img_clone, (0,0,0), position, radius, 0)
-         image_fadecircle(img_clone,position,darken_radius,[0,0,0],darken_amount) # deactivate pixel, new generation TM
+         if mode =="log":
+             #image_fadecircle(img_clone,position,darken_radius,[0,0,0],darken_amount) # deactivate pixel, new generation TM
+             image_fadecircle(img_clone,position,(255.0-br)/255.0*2*darken_radius,[0,0,0],darken_amount) # deactivate pixel, new generation TM
+         if mode =="lin":
+             image_fadecircle_subtract(img_clone,position,darken_radius,[0,0,0],darken_amount)
+         
+
+
+      if len(path)>2:
+         paths.append(path)
          
          image_show(display,img_clone,True,(2,1))
          xpaths = paths+[path]
          image_show(display,render_vector(image_render_paths(xpaths,img_clone.get_size(),1,(0,64,0),(128,0,0)),position,random_angle,20),True,(2,1))
          
          image_save(display,"render/scribble-%09i.jpg"%render_cnt)
-         render_cnt+=1
-
-      if len(path)>2:
-         paths.append(path)
+         render_cnt+=1         
 
 
 

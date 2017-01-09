@@ -109,20 +109,15 @@ def facewalker(input_file):
    c3 = hpgl_usepen(1,(255,255,0))
    c3+=hpgl_frompaths(paths)
    hpgl_tofile(c3,"a3.hpgl")   
-   
 
-def scribbler(input_file):
+def facewalker_silent(input_file):
    img_in = image_load(input_file)
     
-   display = image_gui((img_in.get_width()*2,img_in.get_height()*1),False)
-   
-   #img_in = blacknwhite(img_in,12) 
+   img_in = blacknwhite(img_in,12) 
     
    #img_median, img_border = median(img_in,3,"c",3)
-   img_median=addmul(image_create(img_in.get_size(),(255,255,255)),img_in,-1,1)
-   paths = scribble_visualize(img_median,display,3)
-   
-   return
+   img_median=img_in
+   paths = edgewalk(img_median)
    
    c1 = hpgl_usepen(1,(255,255,0))
    c1+=hpgl_frompaths(paths)
@@ -139,6 +134,34 @@ def scribbler(input_file):
    c3 = hpgl_usepen(1,(255,255,0))
    c3+=hpgl_frompaths(paths)
    hpgl_tofile(c3,"a3.hpgl")      
+
+def scribbler(input_file):
+   img_in = image_load(input_file)
+    
+   display = image_gui((img_in.get_width()*2,img_in.get_height()*1),False)
+   
+   #img_in = blacknwhite(img_in,12) 
+    
+   #img_median, img_border = median(img_in,3,"c",3)
+   img_median=addmul(image_create(img_in.get_size(),(255,255,255)),img_in,-1,1)
+   paths = scribble_visualize(img_median,display,3,20)
+   
+   
+   c1 = hpgl_usepen(1,(255,255,0))
+   c1+=hpgl_frompaths(paths)
+   hpgl_tofile(c1,"b1.hpgl")
+   
+   paths2 = pathcombiner(paths)
+
+   c2 = hpgl_usepen(1,(255,255,0))
+   c2+=hpgl_frompaths(paths)
+   hpgl_tofile(c2,"b2.hpgl")
+      
+   paths3 = optimizepaths(paths2)
+
+   c3 = hpgl_usepen(1,(255,255,0))
+   c3+=hpgl_frompaths(paths)
+   hpgl_tofile(c3,"b3.hpgl")      
    
 def arrowdraw(input_file):
    img_in = image_load(input_file)
@@ -148,6 +171,57 @@ def arrowdraw(input_file):
    for angle in range(-360*4,360*4):
        rotimg=render_vector(img_in, (img_in.get_width()/2,img_in.get_height()/2), angle, 20)
        image_show(display,rotimg,False,(1,1))
+       
+
+
+
+def motionvectors(input_file):
+   img_in = image_load(input_file)
+    
+   display = image_gui((img_in.get_width()*1,img_in.get_height()*1))
+   
+   if True:
+         motionvectors = motionsfind_visualize(img_in, blacknwhite(img_in,0),6, display) # 10px radius
+   
+         cormax = 0
+         corvar_max = 0
+         for vector in motionvectors:
+            pos,ang,ofs,cor,corvar = vector
+
+            # correlation: smaller = smaller difference in picture comparison 0 = identical, which is good
+            # corvar: correlation variance, bigger =  better because we dont just probe signle colored surface...
+            #
+            
+            # correlation needs normalisation
+            if cormax<cor:
+               cormax=cor
+
+            if corvar_max<corvar:
+               corvar_max=corvar
+
+         for vector in motionvectors:
+            pos,ang,ofs,cor,corvar = vector
+
+            # brightness of contrast image correlates to "roughness" at this location
+            #roughness = float(255-max(img_blur.get_at(pos)[:2]))/255
+
+            rel_cor = float(cor)/float(cormax)
+            rel_corvar = float(corvar)/float(corvar_max)
+            ofs=ofs*(1-rel_cor) * rel_corvar
+            vector.append(ofs)
+
+         paths=[]
+         for vector in motionvectors:
+             paths+=render_vector_path(vector[0],vector[1],vector[-1])
+         c1 = hpgl_usepen(1,(255,255,0))
+         c1+=hpgl_frompaths(paths)
+         hpgl_tofile(c1,"motionvectors.hpgl")
+
+         movect = motionvector_rainbow(motionvectors,img_in.get_size())
+         image_show(display,movect, False, (1,1)) 
+         
+         image_save(movect,"movect.jpg")
+        
     
 
 def main(input_file,mode=""):
@@ -163,12 +237,20 @@ def main(input_file,mode=""):
 
    if mode == "facewalker" or mode =="":
        facewalker(input_file)   
-       
+
+   if mode == "facewalker_silent" or mode =="":
+       facewalker_silent(input_file)   
+              
    if mode == "scribbler" or mode =="":
        scribbler(input_file)         
        
    if mode == "arrow":
        arrowdraw(input_file)
+       
+   if mode == "motionvectors":
+       motionvectors(input_file)
+       
+  
    
   
 

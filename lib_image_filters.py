@@ -572,3 +572,29 @@ def image_fadecircle(img_in,position=[0,0],radius=10.0,color=[0,0,0],intensity=0
          img_in.set_at((x,y),out_col)
    return img_in
          
+def image_fadecircle_subtract(img_in,position=[0,0],radius=10.0,color=[0,0,0],intensity=0.5): # works on input image!
+   for x in range(int(position[0]-radius-0.5),int(position[0]+radius+0.5)):
+      for y in range(int(position[1]-radius-0.5),int(position[1]+radius+0.5)):
+         if x<0 or x>=img_in.get_width():
+            continue
+         if y<0 or y>=img_in.get_height():
+            continue
+        
+         in_col = img_in.get_at((x,y))
+         
+         distance_from_center = ( (x-position[0])**2 + (y-position[1])**2 )**0.5
+         distance_from_center_relative = distance_from_center / radius
+         
+         if distance_from_center_relative > 1.0:
+            continue
+         inverse_distance_from_center_relative = 1.0 - distance_from_center_relative
+               
+         new_col = [lcol(in_col[0] - ((255-color[0]) * intensity)), lcol(in_col[1] - ((255-color[1]) * intensity)), lcol(in_col[2] - ((255-color[2]) * intensity))] # subtract new color, weighted by intensity
+         
+         mix_ratio_new = ( 1.0 * inverse_distance_from_center_relative**2 )
+         mix_ratio_old = 1.0 - mix_ratio_new
+         
+         out_col = [ in_col[0]*mix_ratio_old + new_col[0]*mix_ratio_new, in_col[1]*mix_ratio_old + new_col[1]*mix_ratio_new, in_col[2]*mix_ratio_old + new_col[2]*mix_ratio_new ] 
+         
+         img_in.set_at((x,y),out_col)
+   return img_in

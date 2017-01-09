@@ -286,10 +286,10 @@ def main(input_file,mode=""):
 
 
       combv = []
-      for motionvectors in motionvectorss:
+      for motionvectors in motionvectorss: # combine all gathered motion vectors
          combv+=motionvectors
       #print combv
-      motionvector_r = motionvector_rainbow(combv,img_bnw.get_size())
+      motionvector_r = motionvector_rainbow(combv,img_bnw.get_size()) # calculate rainbow image from motion vectors
       image_show(display, motionvector_r, True)
       image_save(motionvector_r,fn_comb(sys.argv[1],"vectom"))
 
